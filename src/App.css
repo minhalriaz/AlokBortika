@@ -1,80 +1,330 @@
-.page {
-  font-family: system-ui, Arial, sans-serif;
-  min-height: 100vh;
+/* ====== BASE RESET / THEME ====== */
+:root {
+  --bg: #070910;
+  --bg2: #0b0f1c;
+  --text: #f1e9e9;
+  --muted: rgba(233, 236, 242, 0.72);
+  --card: rgba(255, 255, 255, 0.06);
+  --stroke: rgba(255, 255, 255, 0.10);
+  --accent: #e72525;       /* neon red */
+  --accent2: #e94b8d;      /* glow */
+  --shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
 }
 
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ====== DEEP NAVY BACKGROUND ====== */
+.page {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+
+  background:
+    radial-gradient(1000px 600px at 50% -15%, rgba(255, 0, 80, 0.20), transparent 65%),
+    radial-gradient(800px 500px at 15% 30%, rgba(0, 255, 255, 0.08), transparent 60%),
+    linear-gradient(180deg, #030712 0%, #050a1a 40%, #081021 100%);
+}
+
+/* ====== SOFT RED GLOW ====== */
+.bgGlow {
+  position: absolute;
+  inset: -250px;
+  filter: blur(100px);
+  opacity: 0.30;
+  pointer-events: none;
+}
+
+/* Left teal glow (very subtle like screenshot) */
+.bgGlow1 {
+  background: radial-gradient(circle at 20% 40%, rgba(0, 255, 200, 0.25), transparent 60%);
+}
+
+/* Right red glow */
+.bgGlow2 {
+  background: radial-gradient(circle at 80% 20%, rgba(255, 0, 80, 0.45), transparent 60%);
+}
+
+/* ====== NAVBAR ====== */
 .nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  border-bottom: 1px solid #eee;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 22px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(7, 9, 16, 0.55);
+  backdrop-filter: blur(10px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brandMark {
+  font-size: 18px;
+  filter: drop-shadow(0 6px 14px rgba(255, 59, 123, 0.25));
 }
 
 .logo {
-  font-weight: 800;
+  font-weight: 900;
+  letter-spacing: 0.2px;
   font-size: 18px;
 }
 
-.links a {
-  margin-left: 16px;
-  text-decoration: none;
-  color: #333;
+.links {
+  display: flex;
+  gap: 16px;
 }
 
+.links a {
+  color: rgba(233, 236, 242, 0.78);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: 999px;
+}
+
+.links a:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.navActions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ====== BUTTONS (MORE PREMIUM) ====== */
+button {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+button:active { transform: translateY(1px); }
+
+.ghostBtn {
+  background: rgba(255,255,255,0.04);
+}
+
+.ghostBtn:hover {
+  background: rgba(255,255,255,0.07);
+}
+
+.ctaBtn {
+  border-color: rgba(255, 59, 123, 0.40);
+  background: rgba(255, 59, 123, 0.14);
+  box-shadow: 0 10px 40px rgba(255, 59, 123, 0.18);
+}
+
+.ctaBtn:hover {
+  background: rgba(255, 59, 123, 0.20);
+}
+
+/* main hero buttons */
+.primary {
+  border-color: rgba(255, 59, 123, 0.50);
+  background: linear-gradient(180deg, rgba(255,59,123,0.95), rgba(255,59,123,0.55));
+  box-shadow: 0 18px 55px rgba(255, 59, 123, 0.22);
+}
+
+.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 24px 75px rgba(255, 59, 123, 0.30);
+}
+
+.secondary {
+  background: rgba(255,255,255,0.06);
+}
+
+.secondary:hover {
+  background: rgba(255,255,255,0.09);
+}
+
+/* ====== HERO ====== */
 .hero {
-  padding: 48px 24px;
+  padding: 70px 20px 36px;
+}
+
+.heroInner {
   max-width: 980px;
   margin: 0 auto;
 }
 
+.badge {
+  display: inline-flex;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 59, 123, 0.25);
+  background: rgba(255, 59, 123, 0.10);
+  color: rgba(255, 214, 230, 0.95);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  margin-bottom: 14px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(34px, 4.2vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.6px;
+}
+
+.glowText {
+  color: #ff2d55;
+  text-shadow:
+    0 0 10px rgba(180, 32, 79, 0.8),
+    0 0 25px rgba(148, 38, 73, 0.6),
+    0 0 45px rgba(173, 40, 82, 0.4);
+}
+
+
+.subtitle {
+  margin-top: 14px;
+  max-width: 70ch;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
 .actions {
-  margin: 20px 0 40px;
+  margin: 22px 0 38px;
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-button {
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.primary {
-  background: #111;
-  color: white;
-  border-color: #111;
-}
-
-.secondary {
-  background: white;
-  color: #111;
-}
-
+/* ====== SECTIONS ====== */
 .section {
-  margin-top: 40px;
+  margin-top: 42px;
 }
 
+.sectionHead h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.2px;
+}
+
+.sectionHead p {
+  margin: 8px 0 0;
+  color: rgba(233, 236, 242, 0.64);
+}
+
+/* ====== CARDS (GLASS + BORDER LIKE 1st IMAGE) ====== */
 .cards {
+  margin-top: 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
-  margin-top: 12px;
 }
 
 .card {
-  padding: 16px;
-  border: 1px solid #eee;
-  border-radius: 14px;
-  background: #fafafa;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
 }
 
+.cardTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.step {
+  font-weight: 900;
+  color: rgba(255, 59, 123, 0.85);
+  letter-spacing: 1px;
+  font-size: 12px;
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -0.2px;
+}
+
+.card p {
+  margin: 8px 0 0;
+  color: rgba(233, 236, 242, 0.72);
+  line-height: 1.65;
+}
+
+/* ====== ABOUT + CONTACT CARDS ====== */
+.aboutCard {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: var(--shadow);
+}
+
+.aboutCard p {
+  margin: 0;
+  color: rgba(233, 236, 242, 0.78);
+  line-height: 1.75;
+}
+
+.contactRow {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.miniCard {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.miniCard h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.miniCard p {
+  margin: 0;
+  color: rgba(233, 236, 242, 0.70);
+}
+
+/* ====== FOOTER ====== */
 .footer {
-  padding: 24px;
-  border-top: 1px solid #eee;
+  padding: 26px 18px;
+  border-top: 1px solid rgba(255,255,255,0.08);
   text-align: center;
-  color: #666;
+  color: rgba(233, 236, 242, 0.55);
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 720px) {
+  .links { display: none; } /* matches modern small-screen nav behavior */
+  .nav { padding: 14px 16px; }
 }
