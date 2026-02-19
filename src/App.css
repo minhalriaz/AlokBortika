@@ -34,12 +34,19 @@ html, body {
 }
 
 /* ====== SOFT RED GLOW ====== */
+/* ====== SOFT RED GLOW ====== */
 .bgGlow {
   position: absolute;
   inset: -250px;
   filter: blur(100px);
   opacity: 0.30;
   pointer-events: none;
+  z-index: 0;
+}
+
+.nav, .hero, .footer {
+  position: relative;
+  z-index: 1;
 }
 
 /* Left teal glow (very subtle like screenshot) */

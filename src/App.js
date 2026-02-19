@@ -1,6 +1,13 @@
+// src/App.js
 import "./App.css";
+import Submit from "./pages/Submit";
 
-function App() {
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Problems from "./pages/Problems";
+
+function Landing() {
   return (
     <div className="page">
       {/* Top glow background layers */}
@@ -9,7 +16,9 @@ function App() {
 
       <header className="nav">
         <div className="brand">
-          <span className="brandMark" aria-hidden="true">📍</span>
+          <span className="brandMark" aria-hidden="true">
+            📍
+          </span>
           <span className="logo">AlokBortika</span>
         </div>
 
@@ -20,8 +29,12 @@ function App() {
         </nav>
 
         <div className="navActions">
-          <button className="ghostBtn">Volunteer Login</button>
-          <button className="ctaBtn">Admin Panel</button>
+          <Link to="/login">
+            <button className="ghostBtn">Volunteer Login</button>
+          </Link>
+          <Link to="/login">
+            <button className="ctaBtn">Admin Panel</button>
+          </Link>
         </div>
       </header>
 
@@ -40,9 +53,20 @@ function App() {
             will coordinate, update progress, and solve issues transparently.
           </p>
 
+          {/* (Submit + Browse + Login) */}
           <div className="actions">
-            <button className="primary">Submit a Problem</button>
-            <button className="secondary">Browse Problems</button>
+            <Link to="/submit">
+              <button className="primary">Submit a Problem</button>
+            </Link>
+
+
+            <Link to="/problems">
+              <button className="secondary">Browse Problems</button>
+            </Link>
+
+            <Link to="/login">
+              <button className="ghostBtn">Login</button>
+            </Link>
           </div>
 
           <section id="how" className="section">
@@ -124,4 +148,17 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/problems" element={<Problems />} />
+        <Route path="/submit" element={<Submit />} />
+
+      </Routes>
+    </Router>
+  );
+}
