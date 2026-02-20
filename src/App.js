@@ -1,31 +1,36 @@
-// src/App.js
 import "./App.css";
-import Submit from "./pages/Submit";
-
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Link, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import Problems from "./pages/Problems";
+import Signup from "./pages/Signup";
+import Submit from "./pages/Submit";
 
 function Landing() {
   return (
     <div className="page">
-      {/* Top glow background layers */}
       <div className="bgGlow bgGlow1" />
       <div className="bgGlow bgGlow2" />
 
       <header className="nav">
         <div className="brand">
           <span className="brandMark" aria-hidden="true">
-            📍
+            AB
           </span>
-          <span className="logo">AlokBortika</span>
+          <Link className="linkBtn logo" to="/">
+            AlokBortika
+          </Link>
         </div>
 
         <nav className="links">
-          <a href="#how">How it works</a>
-          <a href="#about">About</a>
-          <a href="#contact">Contact</a>
+          <Link className="linkBtn activeLink" to="/">
+            Home
+          </Link>
+          <Link className="linkBtn" to="/submit">
+            Submit Report
+          </Link>
+          <Link className="linkBtn" to="/problems">
+            Browse Reports
+          </Link>
         </nav>
 
         <div className="navActions">
@@ -40,33 +45,31 @@ function Landing() {
 
       <main className="hero">
         <div className="heroInner">
-          <div className="badge">For society, for you</div>
+          <div className="heroSection">
+            <div className="badge">For society, for you</div>
 
-          <h1 className="title">
-            Build a <span className="glowText">brighter future</span>
-            <br />
-            together.
-          </h1>
+            <h1 className="title">
+              Build a <span className="glowText">brighter future</span>
+              <br />
+              together.
+            </h1>
 
-          <p className="subtitle">
-            Submit real community problems from your area. Verified volunteers and organizations
-            will coordinate, update progress, and solve issues transparently.
-          </p>
+            <p className="subtitle">
+              Submit real community problems from your area. Verified volunteers and
+              organizations will coordinate, update progress, and solve issues transparently.
+            </p>
 
-          {/* (Submit + Browse + Login) */}
-          <div className="actions">
-            <Link to="/submit">
-              <button className="primary">Submit a Problem</button>
-            </Link>
-
-
-            <Link to="/problems">
-              <button className="secondary">Browse Problems</button>
-            </Link>
-
-            <Link to="/login">
-              <button className="ghostBtn">Login</button>
-            </Link>
+            <div className="actions">
+              <Link to="/submit">
+                <button className="primary">Submit a Problem</button>
+              </Link>
+              <Link to="/problems">
+                <button className="secondary">Browse Problems</button>
+              </Link>
+              <Link to="/login">
+                <button className="ghostBtn">Login</button>
+              </Link>
+            </div>
           </div>
 
           <section id="how" className="section">
@@ -112,7 +115,7 @@ function Landing() {
               <p>
                 AlokBortika connects citizens with local community problems to volunteers and
                 organizations ready to help. Our mission is to make issue reporting simple,
-                transparent, and collaborative — so solutions can happen faster.
+                transparent, and collaborative so solutions can happen faster.
               </p>
             </div>
           </section>
@@ -120,21 +123,21 @@ function Landing() {
           <section id="contact" className="section">
             <div className="sectionHead">
               <h2>Contact</h2>
-              <p>Want to partner or volunteer? Let’s talk.</p>
+              <p>Want to partner or volunteer? Let us talk.</p>
             </div>
 
             <div className="contactRow">
               <div className="miniCard">
                 <h4>Email</h4>
-                <p>support@alokbortika.com</p>
+                <p>prappopal@gmail.com</p>
               </div>
               <div className="miniCard">
-                <h4>Community</h4>
-                <p>Join as a verified volunteer</p>
+                <h4>Phone</h4>
+                <p>01992100882</p>
               </div>
               <div className="miniCard">
                 <h4>Partners</h4>
-                <p>NGOs & Organizations welcome</p>
+                <p>NGOs and organizations welcome</p>
               </div>
             </div>
           </section>
@@ -142,7 +145,33 @@ function Landing() {
       </main>
 
       <footer className="footer">
-        <p>© {new Date().getFullYear()} AlokBortika • Built for community impact</p>
+        <div className="footerInner">
+          <div>
+            <p className="footerTitle">AlokBortika</p>
+            <p>Building transparent community problem solving.</p>
+          </div>
+          <div>
+            <p className="footerLabel">Contact</p>
+            <p>Phone: 01992100882</p>
+            <p>Email: prappopal@gmail.com</p>
+          </div>
+          <div>
+            <p className="footerLabel">Quick Links</p>
+            <p>
+              <Link className="footerLink" to="/submit">
+                Submit Report
+              </Link>
+            </p>
+            <p>
+              <Link className="footerLink" to="/problems">
+                Browse Reports
+              </Link>
+            </p>
+          </div>
+        </div>
+        <p className="copyright">
+          Copyright {new Date().getFullYear()} AlokBortika. All rights reserved.
+        </p>
       </footer>
     </div>
   );
@@ -157,7 +186,6 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/problems" element={<Problems />} />
         <Route path="/submit" element={<Submit />} />
-
       </Routes>
     </Router>
   );
