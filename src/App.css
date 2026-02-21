@@ -421,6 +421,32 @@ button:active {
   color: #86f3b9;
 }
 
+.statusPending {
+  background: rgba(255, 117, 117, 0.2);
+  color: #ffb3b3;
+}
+
+.messageError,
+.messageSuccess {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.messageError {
+  color: #ffd0d0;
+  background: rgba(255, 71, 71, 0.16);
+  border: 1px solid rgba(255, 71, 71, 0.38);
+}
+
+.messageSuccess {
+  color: #c9ffd8;
+  background: rgba(33, 170, 87, 0.2);
+  border: 1px solid rgba(33, 170, 87, 0.45);
+}
+
 .footer {
   padding: 30px 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
