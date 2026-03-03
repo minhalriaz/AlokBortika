@@ -4,6 +4,8 @@ import Login from "./pages/Login";
 import Problems from "./pages/Problems";
 import Signup from "./pages/Signup";
 import Submit from "./pages/Submit";
+import Dashboard from "./pages/Dashboard";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function Landing() {
   return (
@@ -186,6 +188,8 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/problems" element={<Problems />} />
         <Route path="/submit" element={<Submit />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
     </Router>
   );
