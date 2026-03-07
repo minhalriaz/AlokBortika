@@ -1,3 +1,4 @@
+console.log("authRoutes loaded");
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -7,7 +8,10 @@ const router = express.Router();
 
 // Signup
 router.post("/signup", async (req, res) => {
+  console.log("signup route hit");
+  console.log("req.body:", req.body);
   try {
+    
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
@@ -29,6 +33,10 @@ router.post("/signup", async (req, res) => {
     });
 
     await newUser.save();
+    console.log("saved user:", newUser);
+    
+    const allUsers = await User.find();
+    console.log("all users in db:", allUsers);
 
     res.status(201).json({
       message: "Signup successful",

@@ -6,11 +6,13 @@ import "../App.css";
 export default function Signup() {
   const navigate = useNavigate();
   const { register } = useAuth();
+
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     email: "",
     password: "",
   });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -26,6 +28,7 @@ export default function Signup() {
 
     try {
       const result = await register(formData);
+
       if (result.success) {
         navigate("/dashboard");
       } else {
@@ -58,9 +61,9 @@ export default function Signup() {
                 <input
                   className="input"
                   type="text"
-                  name="fullName"
+                  name="name"
                   placeholder="Your name"
-                  value={formData.fullName}
+                  value={formData.name}
                   onChange={handleChange}
                   required
                   disabled={loading}

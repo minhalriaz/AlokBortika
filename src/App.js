@@ -8,7 +8,6 @@ import Submit from "./pages/Submit";
 import Donate from "./pages/Donate";
 import Dashboard from "./pages/Dashboard";
 import ForgotPassword from "./pages/ForgotPassword";
-import Donate from "./pages/Donate";
 import VolunteerReviewPage from "./pages/VolunteerReviewPage";
 
 
