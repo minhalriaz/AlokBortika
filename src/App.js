@@ -4,7 +4,13 @@ import Login from "./pages/Login";
 import Problems from "./pages/Problems";
 import Signup from "./pages/Signup";
 import Submit from "./pages/Submit";
+
 import Donate from "./pages/Donate";
+import Dashboard from "./pages/Dashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import Donate from "./pages/Donate";
+import VolunteerReviewPage from "./pages/VolunteerReviewPage";
+
 
 function Landing() {
   return (
@@ -32,6 +38,11 @@ function Landing() {
           <Link className="linkBtn" to="/problems">
             Browse Reports
           </Link>
+
+          <Link className="linkBtn" to="/volunteer-reviews">
+            Volunteer Reviews
+          </Link>
+
           <Link className="linkBtn" to="/donate">
             Donate
           </Link>
@@ -170,6 +181,13 @@ function Landing() {
               </Link>
             </p>
             <p>
+
+              <Link className="footerLink" to="/volunteer-reviews">
+                Volunteer Reviews
+              </Link>
+            </p>
+            <p>
+
               <Link className="footerLink" to="/submit">
                 Submit Report
               </Link>
@@ -198,7 +216,14 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/problems" element={<Problems />} />
         <Route path="/submit" element={<Submit />} />
+
         <Route path="/donate" element={<Donate />} />
+
+        <Route path="/volunteer-reviews" element={<VolunteerReviewPage />} />
+        <Route path="/donate" element={<Donate />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
       </Routes>
     </Router>
   );

@@ -521,6 +521,210 @@ button:disabled {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+
+}
+
+.footerTitle {
+  margin: 0;
+  font-family: "Sora", "Manrope", sans-serif;
+  font-size: 18px;
+}
+
+.footerLabel {
+  margin: 0 0 8px;
+  font-weight: 800;
+  color: #ecf4ff;
+}
+
+.footer p {
+  margin: 4px 0;
+  color: #bcd0e4;
+}
+
+.footerLink {
+  color: #ffd5b4;
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  color: #ffe8d6;
+  text-decoration: underline;
+}
+
+.copyright {
+  max-width: 1080px;
+  margin: 16px auto 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: #9ab1c8;
+  font-size: 13px;
+}
+
+.reportTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.reportTable th,
+.reportTable td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: left;
+  padding: 11px 10px;
+}
+
+.reportTable th {
+  color: #bfd2e6;
+  font-weight: 800;
+}
+
+.reportTable td {
+  color: #e2edf8;
+}
+
+.dashboardNav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--stroke);
+  background: rgba(4, 16, 30, 0.76);
+  backdrop-filter: blur(14px);
+}
+
+.dashboardBrand {
+  margin: 0;
+  font-family: "Sora", "Manrope", sans-serif;
+  font-size: 22px;
+  color: #fff3e4;
+}
+
+.dashboardUser {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  border-radius: 999px;
+  padding: 5px 12px 5px 6px;
+  background: rgba(255, 209, 102, 0.12);
+}
+
+.dashboardAvatar {
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 800;
+  color: #2b1602;
+  background: linear-gradient(135deg, #ffe198, #ff9f68);
+}
+
+.dashboardName {
+  font-weight: 700;
+  color: #fff4df;
+}
+
+.dashboardActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dangerBtn {
+  border-color: rgba(255, 142, 142, 0.45);
+  color: #ffd8d8;
+  background: rgba(255, 120, 120, 0.13);
+}
+
+.dangerBtn:hover {
+  background: rgba(255, 120, 120, 0.22);
+}
+
+.dashboardMain {
+  padding-top: 86px;
+}
+
+.dashboardGrid {
+  margin-top: 24px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.dashboardValue {
+  margin: 6px 0 0;
+  color: #d6e5f5;
+}
+
+.dashboardCardTitle {
+  margin: 0;
+  color: #ffd9ac;
+  font-size: 18px;
+}
+
+@keyframes floatGlow {
+  from {
+    transform: translateY(0) translateX(0) scale(1);
+  }
+
+  to {
+    transform: translateY(18px) translateX(8px) scale(1.08);
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 920px) {
+  .links {
+    display: none;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .nav {
+    padding: 14px 16px;
+  }
+
+  .hero {
+    padding: 48px 16px 30px;
+  }
+
+  .dashboardNav {
+    padding: 12px 14px;
+  }
+
+  .dashboardActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .reportTable {
+    display: block;
+    overflow-x: auto;
+  }
+
 }
 
 .footerTitle {
