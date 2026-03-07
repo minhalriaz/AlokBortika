@@ -7,10 +7,20 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "framer-motion": "^12.35.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-player": "^3.4.0",
     "react-router-dom": "^6.30.3",
     "react-scripts": "5.0.1",
+    "react-tsparticles": "^2.12.2",
+    "tsparticles": "^3.9.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -36,5 +46,20 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "description": "AlokBortika is a community-based local problem solving platform designed to connect residents with volunteers and organizations.",
+  "main": "index.js",
+  "devDependencies": {
+    "jest": "^27.5.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/minhalriaz/AlokBortika.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/minhalriaz/AlokBortika/issues"
   }
 }
