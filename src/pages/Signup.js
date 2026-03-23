@@ -11,6 +11,7 @@ export default function Signup() {
     name: "",
     email: "",
     password: "",
+    role: "volunteer",
   });
 
   const [error, setError] = useState("");
@@ -30,7 +31,18 @@ export default function Signup() {
       const result = await register(formData);
 
       if (result.success) {
-        navigate("/dashboard");
+        const user = result.user || JSON.parse(localStorage.getItem("user"));
+
+        if (user?.role === "volunteer") {
+  navigate("/volunteer-dashboard");
+} else if (user?.role === "organization") {
+  navigate("/organization-dashboard");
+} else if (user?.role === "admin") {
+  navigate("/admin-dashboard");
+} else {
+  navigate("/");
+}
+
       } else {
         setError(result.message || "Signup failed. Please try again.");
       }
@@ -100,6 +112,21 @@ export default function Signup() {
                 <small style={{ color: "var(--muted)", fontSize: "0.8rem", marginTop: 4 }}>
                   Password must be at least 6 characters long
                 </small>
+              </label>
+
+              <label>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Account Type</div>
+                <select
+                  className="input"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  disabled={loading}
+                >
+                  <option value="volunteer">Volunteer</option>
+                  <option value="organization">Organization</option>
+                  <option value="admin">Admin</option>
+                </select>
               </label>
 
               <button className="primary" type="submit" disabled={loading}>

@@ -4,13 +4,13 @@ import Login from "./pages/Login";
 import Problems from "./pages/Problems";
 import Signup from "./pages/Signup";
 import Submit from "./pages/Submit";
-
 import Donate from "./pages/Donate";
 import Dashboard from "./pages/Dashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import VolunteerReviewPage from "./pages/VolunteerReviewPage";
-
-
+import VolunteerDashboard from "./pages/VolunteerDashboard";
+import VolunteerProfile from "./pages/VolunteerProfile";
+import OrganizationDashboard from "./pages/OrganizationDashboard";
 function Landing() {
   return (
     <div className="page">
@@ -220,9 +220,12 @@ export default function App() {
 
         <Route path="/volunteer-reviews" element={<VolunteerReviewPage />} />
         <Route path="/donate" element={<Donate />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/organization-dashboard" element={<Dashboard />} />
+        <Route path="/admin-dashboard" element={<Dashboard />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-
+        <Route path="/volunteer-dashboard" element={<VolunteerDashboard />} />
+        <Route path="/volunteer-profile" element={<VolunteerProfile />} />
+        <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
       </Routes>
     </Router>
   );

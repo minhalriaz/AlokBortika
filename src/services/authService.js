@@ -7,16 +7,22 @@ const authService = {
         name: userData.name,
         email: userData.email,
         password: userData.password,
+        role: userData.role || "volunteer",
       });
 
       if (response.data.user) {
         localStorage.setItem("user", JSON.stringify(response.data.user));
       }
 
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
+
       return {
-        success: true,
-        message: response.data.message || "Signup successful",
+        success: response.data.success,
+        message: response.data.message,
         user: response.data.user,
+        token: response.data.token,
       };
     } catch (error) {
       return {
@@ -33,17 +39,17 @@ const authService = {
         password: credentials.password,
       });
 
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-      }
-
       if (response.data.user) {
         localStorage.setItem("user", JSON.stringify(response.data.user));
       }
 
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
+
       return {
-        success: true,
-        message: response.data.message || "Login successful",
+        success: response.data.success,
+        message: response.data.message,
         token: response.data.token,
         user: response.data.user,
       };
@@ -55,9 +61,16 @@ const authService = {
     }
   },
 
-  logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  async logout() {
+    try {
+      await api.post("/auth/logout");
+    } catch (error) {
+      console.error("Logout API error:", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    }
+
     return { success: true };
   },
 
@@ -67,43 +80,95 @@ const authService = {
   },
 
   async getCurrentUser() {
-    const user = this.getUserFromStorage();
+    try {
+      const response = await api.get("/auth/me");
 
-    if (!user) {
-      return { success: false, message: "No user found" };
+      if (response.data.success && response.data.user) {
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
+
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to fetch user",
+      };
     }
-
-    return { success: true, user };
   },
 
   async checkAuth() {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      return { success: false, message: "No token found" };
+    try {
+      const response = await api.get("/auth/is-auth");
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Auth check failed",
+      };
     }
-
-    return { success: true };
   },
 
   async sendVerifyOtp() {
-    return { success: false, message: "Not implemented yet" };
+    try {
+      const user = this.getUserFromStorage();
+      const response = await api.post("/auth/send-verify-otp", {
+        userId: user?.id,
+      });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to send OTP",
+      };
+    }
   },
 
-  async verifyEmail() {
-    return { success: false, message: "Not implemented yet" };
+  async verifyEmail(otp) {
+    try {
+      const user = this.getUserFromStorage();
+      const response = await api.post("/auth/verify-account", {
+        userId: user?.id,
+        otp,
+      });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to verify email",
+      };
+    }
   },
 
-  async sendResetOtp() {
-    return { success: false, message: "Not implemented yet" };
+  async sendResetOtp(email) {
+    try {
+      const response = await api.post("/auth/send-reset-otp", { email });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to send reset OTP",
+      };
+    }
   },
 
-  async resetPassword() {
-    return { success: false, message: "Not implemented yet" };
+  async resetPassword(email, otp, newPassword) {
+    try {
+      const response = await api.post("/auth/reset-password", {
+        email,
+        otp,
+        newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to reset password",
+      };
+    }
   },
 
   isLoggedIn() {
-    return !!localStorage.getItem("token");
+    return !!localStorage.getItem("user");
   },
 };
 

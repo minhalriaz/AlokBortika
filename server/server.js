@@ -1,33 +1,44 @@
 import express from "express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 import cors from "cors";
-import "dotenv/config";
-import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 
-import connectDB from "./src/config/mongodb.js";
-<<<<<<< HEAD
-import authRouter from "./src/modules/auth/auth.routes.js";
-import donationRouter from "./src/modules/donation/donation.routes.js";
-=======
-import authRouter from "./src/modules/auth/auth.routes.js"
->>>>>>> ec66770f18ea78210c34f472dcc5c1e9de4869e6
+import authRoutes from "./src/routes/authRoutes.js";
+import volunteerRoutes from "./src/routes/volunteerRoutes.js";
+import organizationRoutes from "./src/routes/organizationRoutes.js";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
-const port = process.env.PORT || 4000;
-connectDB();
 
 app.use(express.json());
-app.use(cookieParser());
-app.use(cors({ 
-  origin: 'http://localhost:3000', // Your frontend URL
-  credentials: true 
-}));
-//API Endpoints
-app.get("/", (req, res) => res.send("API Working"));
-<<<<<<< HEAD
-app.use("/api/auth", authRouter);
-app.use("/api/donations", donationRouter);
-=======
-app.use('/api/auth',authRouter)
->>>>>>> ec66770f18ea78210c34f472dcc5c1e9de4869e6
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.listen(port, () => console.log(`Server started on PORT: ${port}`));
+app.use("/api/auth", authRoutes);
+app.use("/api/volunteer", volunteerRoutes);
+app.use("/api/organization", organizationRoutes);
+app.get("/", (req, res) => {
+  res.send("Backend is running");
+});
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB connected");
+    app.listen(process.env.PORT || 5000, () => {
+      console.log(`Server running on port ${process.env.PORT || 5000}`);
+    });
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err.message);
+  });

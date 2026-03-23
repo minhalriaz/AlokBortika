@@ -62,34 +62,44 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
-    try {
-      const response = await authService.register(userData);
-      if (response.success) {
-        setUser(response.user);
-        setIsAuthenticated(true);
-        return { success: true, message: response.message };
-      } else {
-        return { success: false, message: response.message };
-      }
-    } catch (error) {
-      return { success: false, message: error.message || 'Registration failed' };
+  try {
+    const response = await authService.register(userData);
+    if (response.success) {
+      localStorage.setItem("user", JSON.stringify(response.user));
+      setUser(response.user);
+      setIsAuthenticated(true);
+      return {
+        success: true,
+        message: response.message,
+        user: response.user,
+      };
+    } else {
+      return { success: false, message: response.message };
     }
-  };
+  } catch (error) {
+    return { success: false, message: error.message || "Registration failed" };
+  }
+};
 
-  const login = async (credentials) => {
-    try {
-      const response = await authService.login(credentials);
-      if (response.success) {
-        setUser(response.user);
-        setIsAuthenticated(true);
-        return { success: true, message: response.message };
-      } else {
-        return { success: false, message: response.message };
-      }
-    } catch (error) {
-      return { success: false, message: error.message || 'Login failed' };
+ const login = async (credentials) => {
+  try {
+    const response = await authService.login(credentials);
+    if (response.success) {
+      localStorage.setItem("user", JSON.stringify(response.user));
+      setUser(response.user);
+      setIsAuthenticated(true);
+      return {
+        success: true,
+        message: response.message,
+        user: response.user,
+      };
+    } else {
+      return { success: false, message: response.message };
     }
-  };
+  } catch (error) {
+    return { success: false, message: error.message || "Login failed" };
+  }
+};
 
   const logout = async () => {
     try {
@@ -97,6 +107,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      localStorage.removeItem("user");
       setUser(null);
       setIsAuthenticated(false);
     }

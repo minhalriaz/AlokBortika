@@ -5,7 +5,7 @@ import transporter from "../../config/nodemailer.js";
 
 // --- REGISTER ---
 export const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
 
   if (!name || !email || !password) {
     return res.json({ success: false, message: "Missing Details" });
@@ -20,33 +20,49 @@ export const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new userModel({ name, email, password: hashedPassword });
+    const user = new userModel({
+      name,
+      email,
+      password: hashedPassword,
+      role: role || "volunteer",
+    });
+
     await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
-    // Sending Welcome email
     const mailOption = {
       from: `"${process.env.SENDER_NAME}" <${process.env.SENDER_EMAIL}>`,
       to: email,
       subject: "Welcome to Alok Bortika",
       text: `Welcome to Alok Bortika website. Your account has been created with email id: ${email}`,
     };
+
     await transporter.sendMail(mailOption);
 
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.json({
       success: true,
       message: "Registration successful",
-      user: { id: user._id, name: user.name, email: user.email },
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture,
+        bio: user.bio,
+        skills: user.skills,
+        completedTasks: user.completedTasks,
+      },
     });
   } catch (error) {
     res.json({ success: false, message: error.message });
@@ -66,11 +82,13 @@ export const login = async (req, res) => {
 
   try {
     const user = await userModel.findOne({ email });
+
     if (!user) {
       return res.json({ success: false, message: "Invalid email or password" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
       return res.json({ success: false, message: "Invalid email or password" });
     }
@@ -82,14 +100,24 @@ export const login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.json({
       success: true,
       message: "Login successful",
-      user: { id: user._id, name: user.name, email: user.email },
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profilePicture: user.profilePicture,
+        bio: user.bio,
+        skills: user.skills,
+        completedTasks: user.completedTasks,
+      },
     });
   } catch (error) {
     res.json({ success: false, message: error.message });
@@ -102,7 +130,7 @@ export const logout = (req, res) => {
     httpOnly: true,
     expires: new Date(0),
     secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   });
 
   res.json({ success: true, message: "Logged out successfully" });
@@ -204,25 +232,19 @@ export const isAuthenticated = async (req, res) => {
 // --- GET CURRENT USER ---
 export const getCurrentUser = async (req, res) => {
   try {
-    const token = req.cookies.token;
-    if (!token) {
-      return res.json({ success: false, message: "Not authenticated" });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await userModel.findById(decoded.id).select("-password");
+    const user = await userModel.findById(req.body.userId).select("-password");
 
     if (!user) {
       return res.json({ success: false, message: "User not found" });
     }
 
-    res.json({ success: true, user });
+    return res.json({ success: true, user });
   } catch (error) {
-    res.json({ success: false, message: "Invalid token" });
+    return res.json({ success: false, message: "Invalid token" });
   }
 };
 
-// --- SEND PASSWORD RESET OTP (FIXED) ---
+// --- SEND PASSWORD RESET OTP ---
 export const sendResetOtp = async (req, res) => {
   const { email } = req.body;
 
@@ -239,9 +261,8 @@ export const sendResetOtp = async (req, res) => {
     const otp = String(Math.floor(100000 + Math.random() * 900000));
 
     user.resetOtp = otp;
-    user.resetOtpExpireAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+    user.resetOtpExpireAt = Date.now() + 10 * 60 * 1000;
 
-    // FIXED: You must save the user here so the OTP is stored in DB
     await user.save();
 
     const mailOption = {
@@ -259,7 +280,7 @@ export const sendResetOtp = async (req, res) => {
   }
 };
 
-// --- RESET PASSWORD (FIXED) ---
+// --- RESET PASSWORD ---
 export const resetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
@@ -273,7 +294,6 @@ export const resetPassword = async (req, res) => {
   try {
     const user = await userModel.findOne({ email });
 
-    // FIXED: Cleaned up the error response syntax here
     if (!user) {
       return res.json({ success: false, message: "User not found" });
     }

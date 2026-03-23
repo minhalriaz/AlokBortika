@@ -6,10 +6,12 @@ import "../App.css";
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,8 +27,22 @@ export default function Login() {
 
     try {
       const result = await login(formData);
+
+      console.log("login result:", result);
+      console.log("login user:", result.user);
+
       if (result.success) {
-        navigate("/dashboard");
+        const user = result.user;
+
+        if (user?.role === "volunteer") {
+          navigate("/volunteer-dashboard", { replace: true });
+        } else if (user?.role === "organization") {
+          navigate("/organization-dashboard", { replace: true });
+        } else if (user?.role === "admin") {
+          navigate("/admin-dashboard", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
       } else {
         setError(result.message || "Login failed. Please check your credentials.");
       }
@@ -81,7 +97,11 @@ export default function Login() {
               </label>
 
               <div style={{ textAlign: "right", marginBottom: "0.5rem" }}>
-                <Link to="/forgot-password" className="inlineLink" style={{ fontSize: "0.9rem" }}>
+                <Link
+                  to="/forgot-password"
+                  className="inlineLink"
+                  style={{ fontSize: "0.9rem" }}
+                >
                   Forgot password?
                 </Link>
               </div>
