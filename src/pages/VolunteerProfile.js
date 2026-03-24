@@ -220,25 +220,21 @@ export default function VolunteerProfile() {
                 }}
               >
                 <img
-                  src={
-                    user?.profilePicture
-                      ? `http://localhost:5000${user.profilePicture}`
-                      : "https://via.placeholder.com/180"
-                  }
-                  alt="profile"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    border: "4px solid #0f172a",
-                    background: "#111827",
-                    transition: "0.3s",
-                    cursor: "pointer",
-                  }}
-                  onMouseOver={(e) => (e.target.style.transform = "scale(1.04)")}
-                  onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
-                />
+  src={user?.profilePicture || "https://via.placeholder.com/180"}
+  alt="profile"
+  style={{
+    width: "100%",
+    height: "100%",
+    borderRadius: "50%",
+    objectFit: "cover",
+    border: "4px solid #0f172a",
+    background: "#111827",
+    transition: "0.3s",
+    cursor: "pointer",
+  }}
+  onMouseOver={(e) => (e.target.style.transform = "scale(1.04)")}
+  onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
+/>
               </div>
 
               <h2 style={{ margin: "0 0 8px", color: "#fff", fontSize: 28 }}>

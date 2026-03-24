@@ -1,5 +1,6 @@
 import userModel from "../../models/user.js";
 import problemModel from "../problem/problem.model.js";
+import cloudinary from "../../config/cloudinary.js";
 
 export const getVolunteerDashboard = async (req, res) => {
   try {
@@ -102,22 +103,23 @@ export const updateVolunteerProfile = async (req, res) => {
     return res.json({ success: false, message: error.message });
   }
 };
-
 export const uploadProfilePicture = async (req, res) => {
   try {
     if (!req.file) {
       return res.json({ success: false, message: "No image uploaded" });
     }
 
-    const imagePath = `/uploads/${req.file.filename}`;
+    console.log("Uploading to cloudinary...");
 
-    const user = await userModel
-      .findByIdAndUpdate(
-        req.body.userId,
-        { profilePicture: imagePath },
-        { new: true }
-      )
-      .select("-password");
+    const result = await cloudinary.uploader.upload(req.file.path);
+
+    console.log("Cloudinary result:", result.secure_url);
+
+    const user = await userModel.findByIdAndUpdate(
+      req.body.userId,
+      { profilePicture: result.secure_url },
+      { new: true }
+    ).select("-password");
 
     return res.json({
       success: true,
@@ -125,10 +127,10 @@ export const uploadProfilePicture = async (req, res) => {
       user,
     });
   } catch (error) {
+    console.error("Cloudinary error:", error);
     return res.json({ success: false, message: error.message });
   }
 };
-
 export const assignProblemToVolunteer = async (req, res) => {
   try {
     const { problemId } = req.params;
