@@ -8,6 +8,9 @@ import { fileURLToPath } from "url";
 import authRoutes from "./src/routes/authRoutes.js";
 import volunteerRoutes from "./src/routes/volunteerRoutes.js";
 import organizationRoutes from "./src/routes/organizationRoutes.js";
+import adminRoutes from "./src/routes/adminRoutes.js";
+import problemRouter from "./src/modules/problem/problem.routes.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -29,6 +32,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/volunteer", volunteerRoutes);
 app.use("/api/organization", organizationRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/problem", problemRouter);
+
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });

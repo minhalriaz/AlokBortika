@@ -16,6 +16,11 @@ const problemSchema = new mongoose.Schema(
       required: true,
       default: "General",
     },
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+    },
     organizationName: {
       type: String,
       default: "",
@@ -30,11 +35,6 @@ const problemSchema = new mongoose.Schema(
       default: "open",
     },
     assignedVolunteer: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
-    organizationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,

@@ -62,6 +62,7 @@ export const register = async (req, res) => {
         bio: user.bio,
         skills: user.skills,
         completedTasks: user.completedTasks,
+        organizationId: user.organizationId,
       },
     });
   } catch (error) {
@@ -117,6 +118,7 @@ export const login = async (req, res) => {
         bio: user.bio,
         skills: user.skills,
         completedTasks: user.completedTasks,
+        organizationId: user.organizationId,
       },
     });
   } catch (error) {

@@ -4,19 +4,29 @@ import cloudinary from "../../config/cloudinary.js";
 
 export const getVolunteerDashboard = async (req, res) => {
   try {
-    const user = await userModel.findById(req.body.userId).select("-password");
+    const user = await userModel
+      .findById(req.body.userId)
+      .select("-password")
+      .populate("organizationId", "name type");
 
     if (!user) {
       return res.json({ success: false, message: "Volunteer not found" });
     }
 
+    // If volunteer has an organization, filter problems by that organization
+    const filterQuery = user.organizationId
+      ? { organizationId: user.organizationId, status: "open" }
+      : { status: "open" };
+
     const availableProblems = await problemModel
-      .find({ status: "open" })
-      .sort({ createdAt: -1 });
+      .find(filterQuery)
+      .sort({ createdAt: -1 })
+      .populate("organizationId", "name type");
 
     const assignedProblems = await problemModel
       .find({ assignedVolunteer: user._id, status: "in-progress" })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .populate("organizationId", "name type");
 
     const completedCount = user.completedTasks.length;
     const inProgressCount = assignedProblems.length;
@@ -64,7 +74,10 @@ export const getVolunteerDashboard = async (req, res) => {
 
 export const getVolunteerProfile = async (req, res) => {
   try {
-    const user = await userModel.findById(req.body.userId).select("-password");
+    const user = await userModel
+      .findById(req.body.userId)
+      .select("-password")
+      .populate("organizationId", "name email");
 
     if (!user) {
       return res.json({ success: false, message: "Volunteer not found" });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../App.css";
 import api from "../api/api";
@@ -11,12 +11,32 @@ export default function Submit() {
     category: "",
     location: "",
     description: "",
-    organizationName: "",
+    organizationId: "",
   });
 
+  const [organizations, setOrganizations] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fetchingOrgs, setFetchingOrgs] = useState(true);
+
+  // Fetch organizations on mount
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        const response = await api.get("/problem/organizations");
+        if (response.data.success) {
+          setOrganizations(response.data.organizations);
+        }
+      } catch (error) {
+        console.error("Failed to fetch organizations:", error);
+      } finally {
+        setFetchingOrgs(false);
+      }
+    };
+
+    fetchOrganizations();
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -32,7 +52,8 @@ export default function Submit() {
       !formData.title.trim() ||
       !formData.category.trim() ||
       !formData.location.trim() ||
-      !formData.description.trim();
+      !formData.description.trim() ||
+      !formData.organizationId.trim();
 
     if (hasEmptyRequiredField) {
       setErrorMessage("Please fill in all required fields before submitting.");
@@ -47,7 +68,7 @@ export default function Submit() {
         category: formData.category,
         location: formData.location,
         description: formData.description,
-        organizationName: formData.organizationName,
+        organizationId: formData.organizationId,
       });
 
       if (response.data.success) {
@@ -57,7 +78,7 @@ export default function Submit() {
           category: "",
           location: "",
           description: "",
-          organizationName: "",
+          organizationId: "",
         });
       } else {
         setErrorMessage(response.data.message || "Failed to submit problem.");
@@ -127,15 +148,31 @@ export default function Submit() {
               </label>
 
               <label className="fullWidth">
-                Organization Name (optional)
-                <input
-                  type="text"
-                  name="organizationName"
-                  placeholder="Optional organization or group name"
-                  value={formData.organizationName}
+                Organization <span style={{ color: "red" }}>*</span>
+                <select
+                  name="organizationId"
+                  value={formData.organizationId}
                   onChange={handleChange}
-                  disabled={loading}
-                />
+                  disabled={loading || fetchingOrgs}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "1px solid #ccc",
+                    background: "#fff",
+                    color: "#000",
+                    cursor: fetchingOrgs ? "wait" : "pointer",
+                  }}
+                >
+                  <option value="">
+                    {fetchingOrgs ? "Loading organizations..." : "Select an organization"}
+                  </option>
+                  {organizations.map((org) => (
+                    <option key={org._id} value={org._id}>
+                      {org.name}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label className="fullWidth">

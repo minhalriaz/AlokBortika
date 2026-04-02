@@ -552,6 +552,20 @@ export default function VolunteerProfile() {
                       {user?.bio || "No bio added yet."}
                     </div>
                   </div>
+
+                  <div
+                    style={{
+                      padding: 14,
+                      borderRadius: 16,
+                      background: "rgba(16,185,129,0.08)",
+                      border: "1px solid rgba(16,185,129,0.2)",
+                    }}
+                  >
+                    <div style={{ color: "#94a3b8", fontSize: 13 }}>Organization</div>
+                    <div style={{ color: "#a7f3d0", fontWeight: 700 }}>
+                      {user?.organization?.name || "Not assigned"}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

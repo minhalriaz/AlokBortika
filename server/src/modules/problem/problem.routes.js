@@ -1,17 +1,27 @@
 import express from "express";
 import problemModel from "./problem.model.js";
+import organizationModel from "../../models/Organization.js";
 
 const problemRouter = express.Router();
 
 // Create a new problem
 problemRouter.post("/create", async (req, res) => {
   try {
-    const { title, description, category, location, organizationName } = req.body;
+    const { title, description, category, location, organizationId } = req.body;
 
-    if (!title || !description) {
+    if (!title || !description || !organizationId) {
       return res.json({
         success: false,
-        message: "Title and description are required",
+        message: "Title, description, and organization are required",
+      });
+    }
+
+    // Verify organization exists
+    const organization = await organizationModel.findById(organizationId);
+    if (!organization) {
+      return res.json({
+        success: false,
+        message: "Invalid organization selected",
       });
     }
 
@@ -20,7 +30,8 @@ problemRouter.post("/create", async (req, res) => {
       description,
       category: category || "General",
       location: location || "",
-      organizationName: organizationName || "",
+      organizationId: organizationId,
+      organizationName: organization.name,
     });
 
     res.json({
@@ -36,10 +47,32 @@ problemRouter.post("/create", async (req, res) => {
   }
 });
 
+// Get all organizations for dropdown
+problemRouter.get("/organizations", async (req, res) => {
+  try {
+    const organizations = await organizationModel
+      .find({ status: "active" })
+      .select("_id name type");
+
+    res.json({
+      success: true,
+      organizations,
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 // Get all problems
 problemRouter.get("/all", async (req, res) => {
   try {
-    const problems = await problemModel.find().sort({ createdAt: -1 });
+    const problems = await problemModel
+      .find()
+      .sort({ createdAt: -1 })
+      .populate("organizationId", "name type");
 
     res.json({
       success: true,

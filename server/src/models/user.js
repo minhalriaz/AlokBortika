@@ -39,7 +39,7 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["volunteer", "organization", "admin"],
+      enum: ["volunteer", "admin"],
       default: "volunteer",
     },
 
@@ -61,6 +61,13 @@ const userSchema = new mongoose.Schema(
     completedTasks: {
       type: [completedTaskSchema],
       default: [],
+    },
+
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      description: "For volunteers: which organization they belong to",
     },
 
     verifyOtp: { type: String, default: "" },
