@@ -13,6 +13,7 @@ import VolunteerDashboard from "./pages/VolunteerDashboard";
 import VolunteerProfile from "./pages/VolunteerProfile";
 import OrganizationDashboard from "./pages/OrganizationDashboard";
 import AdminOpportunities from "./pages/admin/AdminOpportunities";
+import AdminOrganizations from "./pages/admin/AdminOrganizations";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from "react-hot-toast";
 function Landing({ theme, toggleTheme }) {
@@ -61,7 +62,7 @@ function Landing({ theme, toggleTheme }) {
           <Link to="/login">
             <button className="ghostBtn">Volunteer Login</button>
           </Link>
-          <Link to="/login">
+          <Link to="/admin">
             <button className="ctaBtn">Admin Panel</button>
           </Link>
         </div>
@@ -247,11 +248,12 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/volunteer-reviews" element={<VolunteerReviewPage />} />
         <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
-        <Route path="/admin-dashboard" element={<Dashboard />} />
+        <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOpportunities /></ProtectedRoute>} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/volunteer-dashboard" element={<VolunteerDashboard />} />
         <Route path="/volunteer-profile" element={<VolunteerProfile />} />
-        <Route path="/admin" element={ <ProtectedRoute allowedRoles={["admin"]}><AdminOpportunities /></ProtectedRoute> }/>
+        <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOpportunities /></ProtectedRoute>} />
+        <Route path="/admin/organizations" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOrganizations /></ProtectedRoute>} />
       </Routes>
     </Router>
   );

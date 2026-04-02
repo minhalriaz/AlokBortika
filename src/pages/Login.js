@@ -39,7 +39,7 @@ export default function Login() {
         } else if (user?.role === "organization") {
           navigate("/organization-dashboard", { replace: true });
         } else if (user?.role === "admin") {
-          navigate("/admin-dashboard", { replace: true });
+          navigate("/admin", { replace: true });
         } else {
           navigate("/", { replace: true });
         }

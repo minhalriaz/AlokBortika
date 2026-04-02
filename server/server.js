@@ -10,6 +10,7 @@ import volunteerRoutes from "./src/routes/volunteerRoutes.js";
 import organizationRoutes from "./src/routes/organizationRoutes.js";
 import adminRoutes from "./src/routes/adminRoutes.js";
 import problemRouter from "./src/modules/problem/problem.routes.js";
+import opportunityRouter from "./src/modules/opportunity/opportunity.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +35,7 @@ app.use("/api/volunteer", volunteerRoutes);
 app.use("/api/organization", organizationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/problem", problemRouter);
+app.use("/api/opportunities", opportunityRouter);
 
 app.get("/", (req, res) => {
   res.send("Backend is running");

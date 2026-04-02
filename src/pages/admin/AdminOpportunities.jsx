@@ -231,7 +231,7 @@ function OpportunityModal({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="grid gap-6 p-6 lg:grid-cols-[360px_1fr]">
+        <form onSubmit={onSubmit} className="adminForm adminFormSection grid gap-6 p-6 lg:grid-cols-[360px_1fr]">
           <div className="space-y-5">
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <p className="mb-3 text-sm font-medium text-slate-700">Opportunity image</p>
@@ -700,9 +700,27 @@ export default function AdminOpportunities() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+    <div className="page adminPage">
+      <div className="adminPanel">
+        {/* Admin Navigation */}
+        <div className="border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-6 px-6 py-4">
+            <button
+              onClick={() => navigate("/admin")}
+              className="text-sm font-medium text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600 dark:border-emerald-400 pb-1"
+            >
+              Volunteer Opportunities
+            </button>
+            <button
+              onClick={() => navigate("/admin/organizations")}
+              className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 pb-1 transition-colors"
+            >
+              Manage Organizations
+            </button>
+          </div>
+        </div>
+
+        <div className="adminPanelHeader">
           <div>
             <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">
               Admin Dashboard
