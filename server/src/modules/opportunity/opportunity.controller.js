@@ -1,5 +1,6 @@
 import Opportunity from "../../models/Opportunity.js";
 import User from "../../models/user.js";
+import cloudinary from "../../config/cloudinary.js";
 
 // Get all opportunities
 export const getAllOpportunities = async (req, res) => {
@@ -74,9 +75,23 @@ export const createOpportunity = async (req, res) => {
       themeColor,
       requirements,
       benefits,
-      image,
-      imageUrl,
     } = req.body;
+
+    let imageUrl = null;
+
+    // Upload image to Cloudinary if provided
+    if (req.file) {
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path);
+        imageUrl = result.secure_url;
+      } catch (uploadError) {
+        console.error("Cloudinary upload error:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to upload image to Cloudinary",
+        });
+      }
+    }
 
     const opportunity = new Opportunity({
       title,
@@ -93,8 +108,8 @@ export const createOpportunity = async (req, res) => {
       benefits: Array.isArray(benefits)
         ? benefits
         : benefits?.split("\n").filter(Boolean) || [],
-      image: image || imageUrl,
-      imageUrl: image || imageUrl,
+      image: imageUrl,
+      imageUrl: imageUrl,
       createdBy: userId,
     });
 
@@ -138,10 +153,26 @@ export const updateOpportunity = async (req, res) => {
       themeColor,
       requirements,
       benefits,
-      image,
-      imageUrl,
       status,
     } = req.body;
+
+    // Get existing opportunity to preserve image if not updating it
+    const existingOpportunity = await Opportunity.findById(id);
+    let imageUrl = existingOpportunity?.imageUrl;
+
+    // Upload new image to Cloudinary if provided
+    if (req.file) {
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path);
+        imageUrl = result.secure_url;
+      } catch (uploadError) {
+        console.error("Cloudinary upload error:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to upload image to Cloudinary",
+        });
+      }
+    }
 
     const opportunity = await Opportunity.findByIdAndUpdate(
       id,
@@ -160,8 +191,8 @@ export const updateOpportunity = async (req, res) => {
         benefits: Array.isArray(benefits)
           ? benefits
           : benefits?.split("\n").filter(Boolean) || [],
-        image: image || imageUrl,
-        imageUrl: image || imageUrl,
+        image: imageUrl,
+        imageUrl: imageUrl,
         status,
       },
       { new: true }
