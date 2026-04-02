@@ -194,6 +194,47 @@ function OpportunityModal({
 
   const title = mode === "create" ? "Add Opportunity" : "Edit Opportunity";
 
+  // Compress image before upload
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxWidth = 800;
+          const maxHeight = 600;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height *= maxWidth / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width *= maxHeight / height;
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            const compressedFile = new File([blob], file.name, { type: "image/jpeg" });
+            resolve(compressedFile);
+          }, "image/jpeg", 0.8);
+        };
+      };
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({
@@ -202,13 +243,23 @@ function OpportunityModal({
     }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0] || null;
-    setForm((prev) => ({ ...prev, image: file }));
 
     if (file) {
-      const localPreview = URL.createObjectURL(file);
-      setPreviewUrl(localPreview);
+      try {
+        const compressedFile = await compressImage(file);
+        setForm((prev) => ({ ...prev, image: compressedFile }));
+
+        const localPreview = URL.createObjectURL(compressedFile);
+        setPreviewUrl(localPreview);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        // Fallback to original file
+        setForm((prev) => ({ ...prev, image: file }));
+        const localPreview = URL.createObjectURL(file);
+        setPreviewUrl(localPreview);
+      }
     }
   };
 
@@ -482,6 +533,7 @@ const inputClass =
 
 export default function AdminOpportunities() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -489,6 +541,8 @@ export default function AdminOpportunities() {
     if (!user || user.role !== "admin") {
       toast.error("Access denied");
       navigate("/login"); // or dashboard
+    } else {
+      setCurrentUser(user);
     }
   }, [navigate]);
 
@@ -605,6 +659,11 @@ export default function AdminOpportunities() {
     data.append("benefits", JSON.stringify(parseListField(form.benefits)));
     data.append("isActive", String(form.isActive));
     data.append("isFeatured", String(form.isFeatured));
+    
+    // Add userId from current user
+    if (currentUser && currentUser._id) {
+      data.append("userId", currentUser._id);
+    }
 
     if (form.image) {
       data.append("image", form.image);
