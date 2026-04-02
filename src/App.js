@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import "./App.css";
 import { BrowserRouter as Router, Link, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
@@ -11,7 +12,10 @@ import VolunteerReviewPage from "./pages/VolunteerReviewPage";
 import VolunteerDashboard from "./pages/VolunteerDashboard";
 import VolunteerProfile from "./pages/VolunteerProfile";
 import OrganizationDashboard from "./pages/OrganizationDashboard";
-function Landing() {
+import AdminOpportunities from "./pages/admin/AdminOpportunities";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { Toaster } from "react-hot-toast";
+function Landing({ theme, toggleTheme }) {
   return (
     <div className="page">
       <div className="bgGlow bgGlow1" />
@@ -19,9 +23,15 @@ function Landing() {
 
       <header className="nav">
         <div className="brand">
-          <span className="brandMark" aria-hidden="true">
-            AB
-          </span>
+          <button
+            type="button"
+            className="brandMark"
+            aria-pressed={theme === "dark"}
+            aria-label="Toggle theme"
+            onClick={toggleTheme}
+          >
+            <span className="brandMarkDot" />
+          </button>
           <Link className="linkBtn logo" to="/">
             AlokBortika
           </Link>
@@ -207,25 +217,41 @@ function Landing() {
 }
 
 export default function App() {
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("alokbortika-theme");
+    const nextTheme = savedTheme === "dark" ? "dark" : "light";
+    setTheme(nextTheme);
+    document.documentElement.dataset.theme = nextTheme;
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    document.documentElement.dataset.theme = nextTheme;
+    localStorage.setItem("alokbortika-theme", nextTheme);
+  };
+
   return (
     <Router>
+      <Toaster position="top-right" />
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<Landing theme={theme} toggleTheme={toggleTheme} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/problems" element={<Problems />} />
         <Route path="/submit" element={<Submit />} />
 
         <Route path="/donate" element={<Donate />} />
-
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/volunteer-reviews" element={<VolunteerReviewPage />} />
-        <Route path="/donate" element={<Donate />} />
-        <Route path="/organization-dashboard" element={<Dashboard />} />
+        <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
         <Route path="/admin-dashboard" element={<Dashboard />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/volunteer-dashboard" element={<VolunteerDashboard />} />
         <Route path="/volunteer-profile" element={<VolunteerProfile />} />
-        <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
+        <Route path="/admin" element={ <ProtectedRoute allowedRoles={["admin"]}><AdminOpportunities /></ProtectedRoute> }/>
       </Routes>
     </Router>
   );
