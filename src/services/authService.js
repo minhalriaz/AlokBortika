@@ -14,15 +14,10 @@ const authService = {
         localStorage.setItem("user", JSON.stringify(response.data.user));
       }
 
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-      }
-
       return {
         success: response.data.success,
         message: response.data.message,
         user: response.data.user,
-        token: response.data.token,
       };
     } catch (error) {
       return {
@@ -43,14 +38,9 @@ const authService = {
         localStorage.setItem("user", JSON.stringify(response.data.user));
       }
 
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-      }
-
       return {
         success: response.data.success,
         message: response.data.message,
-        token: response.data.token,
         user: response.data.user,
       };
     } catch (error) {
@@ -67,7 +57,6 @@ const authService = {
     } catch (error) {
       console.error("Logout API error:", error);
     } finally {
-      localStorage.removeItem("token");
       localStorage.removeItem("user");
     }
 
