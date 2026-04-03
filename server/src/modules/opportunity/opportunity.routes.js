@@ -1,5 +1,6 @@
 import express from "express";
 import upload from "../../middlewares/upload.middleware.js";
+import userAuth from "../../modules/auth/auth.middleware.js";
 import {
   getAllOpportunities,
   getOpportunityById,
@@ -15,8 +16,8 @@ router.get("/", getAllOpportunities);
 router.get("/:id", getOpportunityById);
 
 // Admin routes (controller handles auth check)
-router.post("/", upload.single("image"), createOpportunity);
-router.put("/:id", upload.single("image"), updateOpportunity);
-router.delete("/:id", deleteOpportunity);
+router.post("/", userAuth, upload.single("image"), createOpportunity);
+router.put("/:id", userAuth, upload.single("image"), updateOpportunity);
+router.delete("/:id", userAuth, deleteOpportunity);
 
 export default router;

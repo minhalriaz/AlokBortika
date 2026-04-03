@@ -568,6 +568,10 @@ export default function AdminOpportunities() {
     });
   }, [opportunities]);
 
+  const totalOpportunities = opportunities.length;
+  const activeOpportunities = opportunities.filter((o) => o.isActive).length;
+  const featuredOpportunities = opportunities.filter((o) => o.isFeatured).length;
+
   const fetchOpportunities = async () => {
     try {
       setLoading(true);
@@ -660,9 +664,9 @@ export default function AdminOpportunities() {
     data.append("isActive", String(form.isActive));
     data.append("isFeatured", String(form.isFeatured));
     
-    // Add userId from current user
-    if (currentUser && currentUser._id) {
-      data.append("userId", currentUser._id);
+    // Add userId from current user (supports both _id and id keys)
+    if (currentUser && (currentUser._id || currentUser.id)) {
+      data.append("userId", currentUser._id || currentUser.id);
     }
 
     if (form.image) {
@@ -742,6 +746,9 @@ export default function AdminOpportunities() {
       payload.append("benefits", JSON.stringify(parseListField(item.benefits || "")));
       payload.append("isActive", String(!item.isActive));
       payload.append("isFeatured", String(item.isFeatured));
+      if (currentUser && (currentUser._id || currentUser.id)) {
+        payload.append("userId", currentUser._id || currentUser.id);
+      }
 
       await api.put(`/opportunities/${item.id}`, payload, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -799,6 +806,23 @@ export default function AdminOpportunities() {
             <Plus className="h-4 w-4" />
             Add Opportunity
           </button>
+        </div>
+
+        <div className="adminStatGrid">
+          <div className="adminStatCard">
+            <div className="adminStatTitle">Total opportunities</div>
+            <div className="adminStatValue">{totalOpportunities}</div>
+          </div>
+
+          <div className="adminStatCard">
+            <div className="adminStatTitle">Active opportunities</div>
+            <div className="adminStatValue">{activeOpportunities}</div>
+          </div>
+
+          <div className="adminStatCard">
+            <div className="adminStatTitle">Featured opportunities</div>
+            <div className="adminStatValue">{featuredOpportunities}</div>
+          </div>
         </div>
 
         {loading ? (
