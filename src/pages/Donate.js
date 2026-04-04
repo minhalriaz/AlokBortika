@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../App.css";
 import "./Donate.css";
+import donationService from "../services/donationService";
 
 const IMPACT_ITEMS = [
   {
@@ -103,8 +104,8 @@ const PRESET_AMOUNTS = [100, 500, 1000];
 const PAYMENT_METHODS = [
   {
     id: "card",
-    label: "Credit/Debit Card",
-    description: "Visa, MasterCard, or any supported bank card.",
+    label: "Card (Stripe)",
+    description: "Securely pay with Visa, MasterCard, or any supported card.",
   },
   {
     id: "bkash",
@@ -128,11 +129,18 @@ const INITIAL_FORM = {
   donorPhone: "",
   email: "",
   amount: "",
-  paymentMethod: "bkash",
+  paymentMethod: "card",
   transactionId: "",
   note: "",
   isAnonymous: false,
   campaignId: INITIAL_CAMPAIGNS[0].id,
+};
+
+const API_PAYMENT_METHOD_BY_ID = {
+  card: "Card",
+  bkash: "bKash",
+  nagad: "Nagad",
+  rocket: "Rocket",
 };
 
 function formatCurrency(amount, currency = "BDT") {
@@ -162,6 +170,26 @@ function getProgressPercent(raisedAmount, targetAmount) {
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function getPaymentMethodLabel(methodId) {
+  return (
+    PAYMENT_METHODS.find((method) => method.id === methodId)?.label ||
+    "Unknown payment method"
+  );
+}
+
+function clearPaymentQueryParams() {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.delete("payment");
+  url.searchParams.delete("session_id");
+  const nextSearch = url.searchParams.toString();
+  window.history.replaceState(
+    {},
+    document.title,
+    `${url.pathname}${nextSearch ? `?${nextSearch}` : ""}`
+  );
 }
 
 function CampaignCard({ campaign, onDonateClick }) {
@@ -243,6 +271,107 @@ export default function Donate() {
   );
 
   const totalProgress = getProgressPercent(totalRaised, totalTarget);
+
+  const appendDonationToUi = useCallback((donationPayload) => {
+    const donationAmount = Number(donationPayload?.amount) || 0;
+    const donationCampaignId = donationPayload?.campaignId || "";
+    const donationId = donationPayload?.id || `${Date.now()}`;
+    const donorName = donationPayload?.donorName || "Anonymous";
+    let campaignTitle = donationPayload?.campaignTitle || "Community Campaign";
+
+    if (donationCampaignId) {
+      setCampaigns((prev) =>
+        prev.map((campaign) => {
+          if (campaign.id !== donationCampaignId) return campaign;
+          campaignTitle = campaign.title;
+          return {
+            ...campaign,
+            raisedAmount: campaign.raisedAmount + donationAmount,
+          };
+        })
+      );
+    }
+
+    setRecentDonations((prev) => {
+      if (prev.some((item) => item.id === donationId)) {
+        return prev;
+      }
+
+      return [
+        {
+          id: donationId,
+          donorName,
+          isAnonymous: donorName === "Anonymous",
+          amount: donationAmount,
+          campaignId: donationCampaignId,
+          campaignTitle,
+          donatedAt: donationPayload?.donatedAt || new Date().toISOString(),
+        },
+        ...prev,
+      ];
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get("payment");
+    const sessionId = params.get("session_id");
+
+    if (paymentStatus === "cancelled") {
+      setErrorMessage("Payment was cancelled. You can try again anytime.");
+      clearPaymentQueryParams();
+      return;
+    }
+
+    if (paymentStatus !== "success" || !sessionId) {
+      return;
+    }
+
+    let shouldIgnore = false;
+
+    const verifyPayment = async () => {
+      setIsProcessingPayment(true);
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      try {
+        const response = await donationService.verifyCheckoutSession(sessionId);
+
+        if (shouldIgnore) return;
+
+        if (!response?.success || !response?.donation) {
+          throw new Error(response?.message || "Payment verification failed.");
+        }
+
+        appendDonationToUi(response.donation);
+        setFormData(INITIAL_FORM);
+        setSelectedAmountType("custom");
+        setErrors({});
+        setPaymentDraft(null);
+        setThankYouMessage(
+          "Thank you for supporting your community. Your contribution helps solve real local problems."
+        );
+        setSuccessMessage("Payment successful and donation recorded.");
+      } catch (error) {
+        if (!shouldIgnore) {
+          setErrorMessage(error?.message || "Failed to verify payment.");
+        }
+      } finally {
+        if (!shouldIgnore) {
+          setIsProcessingPayment(false);
+          clearPaymentQueryParams();
+        }
+      }
+    };
+
+    verifyPayment();
+
+    return () => {
+      shouldIgnore = true;
+    };
+  }, [appendDonationToUi]);
 
   const handleInputChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -333,11 +462,14 @@ export default function Donate() {
     setPaymentDraft({
       donorName: formData.donorName.trim(),
       email: formData.email.trim(),
+      donorPhone: formData.donorPhone.trim(),
       amount: amountValue,
       isAnonymous: formData.isAnonymous,
       campaignId: formData.campaignId,
       campaignTitle: selectedCampaign ? selectedCampaign.title : "Community Campaign",
       paymentMethod: formData.paymentMethod,
+      transactionId: formData.transactionId.trim(),
+      note: formData.note.trim(),
     });
   };
 
@@ -353,42 +485,63 @@ export default function Donate() {
     setIsProcessingPayment(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      if (paymentDraft.paymentMethod === "card") {
+        const checkoutPayload = {
+          donorName: paymentDraft.donorName,
+          donorEmail: paymentDraft.email,
+          donorPhone: paymentDraft.donorPhone,
+          amount: paymentDraft.amount,
+          campaignId: paymentDraft.campaignId,
+          campaignTitle: paymentDraft.campaignTitle,
+          note: paymentDraft.note,
+          isAnonymous: paymentDraft.isAnonymous,
+        };
 
-      setCampaigns((prev) =>
-        prev.map((campaign) => {
-          if (campaign.id !== paymentDraft.campaignId) return campaign;
+        const checkoutResponse = await donationService.createCheckoutSession(checkoutPayload);
+        if (!checkoutResponse?.success || !checkoutResponse?.checkoutUrl) {
+          throw new Error(
+            checkoutResponse?.message || "Failed to create payment session."
+          );
+        }
 
-          return {
-            ...campaign,
-            raisedAmount: campaign.raisedAmount + paymentDraft.amount,
-          };
-        })
-      );
+        window.location.href = checkoutResponse.checkoutUrl;
+        return;
+      }
 
-      const newDonation = {
-        id: `${Date.now()}`,
+      const donationResponse = await donationService.createDonation({
         donorName: paymentDraft.donorName,
-        isAnonymous: paymentDraft.isAnonymous,
+        donorEmail: paymentDraft.email,
+        donorPhone: paymentDraft.donorPhone,
         amount: paymentDraft.amount,
+        paymentMethod:
+          API_PAYMENT_METHOD_BY_ID[paymentDraft.paymentMethod] ||
+          getPaymentMethodLabel(paymentDraft.paymentMethod),
+        transactionId: paymentDraft.transactionId,
+        note: paymentDraft.note,
+        isAnonymous: paymentDraft.isAnonymous,
         campaignId: paymentDraft.campaignId,
         campaignTitle: paymentDraft.campaignTitle,
-        donatedAt: new Date().toISOString(),
-      };
+      });
 
-      setRecentDonations((prev) => [newDonation, ...prev]);
+      if (!donationResponse?.success || !donationResponse?.donation) {
+        throw new Error(donationResponse?.message || "Failed to submit donation.");
+      }
+
+      appendDonationToUi(donationResponse.donation);
       setFormData(INITIAL_FORM);
       setSelectedAmountType("custom");
       setErrors({});
       setPaymentDraft(null);
-
       setThankYouMessage(
         "Thank you for supporting your community. Your contribution helps solve real local problems."
       );
-
-      setSuccessMessage("Donation submitted successfully.");
+      setSuccessMessage(
+        paymentDraft.transactionId
+          ? "Donation submitted and marked as received."
+          : "Donation submitted. It is pending payment verification."
+      );
     } catch (error) {
-      setErrorMessage("Failed to submit donation.");
+      setErrorMessage(error?.message || "Failed to submit donation.");
     } finally {
       setIsProcessingPayment(false);
     }
@@ -577,8 +730,8 @@ export default function Donate() {
           <div className="donate-section-head">
             <h2>Online Donation System</h2>
             <p>
-              This is a simulated payment flow for now. You can connect a real payment
-              gateway later.
+              Card donations are processed securely with Stripe Checkout. Wallet
+              donations are recorded and kept pending for manual verification.
             </p>
           </div>
 
@@ -611,16 +764,18 @@ export default function Donate() {
             </span>
           )}
 
-          <label className="fullWidth">
-            Transaction ID (optional)
-            <input
-              type="text"
-              name="transactionId"
-              placeholder="Wallet trxID / bank reference"
-              value={formData.transactionId}
-              onChange={handleInputChange}
-            />
-          </label>
+          {formData.paymentMethod !== "card" && (
+            <label className="fullWidth">
+              Transaction ID (optional)
+              <input
+                type="text"
+                name="transactionId"
+                placeholder="Wallet trxID / bank reference"
+                value={formData.transactionId}
+                onChange={handleInputChange}
+              />
+            </label>
+          )}
 
           <label className="fullWidth">
             Note (optional)
@@ -644,8 +799,7 @@ export default function Donate() {
             </p>
             <p>
               <strong>Method:</strong>{" "}
-              {PAYMENT_METHODS.find((method) => method.id === formData.paymentMethod)?.label ||
-                "Not selected"}
+              {getPaymentMethodLabel(formData.paymentMethod)}
             </p>
           </div>
 
@@ -653,7 +807,9 @@ export default function Donate() {
             type="submit"
             className="donate-btn donate-btn-primary donate-submit-btn"
           >
-            Proceed to Donate
+            {formData.paymentMethod === "card"
+              ? "Proceed to Secure Payment"
+              : "Submit Donation"}
           </button>
 
           {errorMessage && <p className="messageError">{errorMessage}</p>}
@@ -718,10 +874,14 @@ export default function Donate() {
             className="donate-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Simulated payment"
+            aria-label="Confirm payment"
           >
             <h3>Confirm Donation</h3>
-            <p>This payment is simulated for the university project demo.</p>
+            <p>
+              {paymentDraft.paymentMethod === "card"
+                ? "You will be redirected to Stripe Checkout to complete payment securely."
+                : "This donation request will be recorded for wallet payment verification."}
+            </p>
 
             <div className="donate-modal-summary">
               <p>
@@ -736,10 +896,13 @@ export default function Donate() {
               </p>
               <p>
                 <strong>Payment Method:</strong>{" "}
-                {PAYMENT_METHODS.find(
-                  (method) => method.id === paymentDraft.paymentMethod
-                )?.label}
+                {getPaymentMethodLabel(paymentDraft.paymentMethod)}
               </p>
+              {paymentDraft.transactionId && (
+                <p>
+                  <strong>Transaction ID:</strong> {paymentDraft.transactionId}
+                </p>
+              )}
             </div>
 
             <div className="donate-modal-actions">
@@ -758,7 +921,11 @@ export default function Donate() {
                 onClick={handleConfirmPayment}
                 disabled={isProcessingPayment}
               >
-                {isProcessingPayment ? "Processing Payment..." : "Pay Now (Simulated)"}
+                {isProcessingPayment
+                  ? "Processing..."
+                  : paymentDraft.paymentMethod === "card"
+                  ? "Continue to Stripe"
+                  : "Confirm Donation"}
               </button>
             </div>
           </section>

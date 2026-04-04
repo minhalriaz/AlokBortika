@@ -18,6 +18,24 @@ const donationService = {
       throw error.response?.data || { success: false, message: error.message };
     }
   },
+
+  async createCheckoutSession(donationData) {
+    try {
+      const response = await api.post("/donations/checkout-session", donationData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { success: false, message: error.message };
+    }
+  },
+
+  async verifyCheckoutSession(sessionId) {
+    try {
+      const response = await api.post("/donations/verify-session", { sessionId });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { success: false, message: error.message };
+    }
+  },
 };
 
 export default donationService;

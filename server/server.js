@@ -11,6 +11,7 @@ import organizationRoutes from "./src/routes/organizationRoutes.js";
 import adminRoutes from "./src/routes/adminRoutes.js";
 import problemRouter from "./src/modules/problem/problem.routes.js";
 import opportunityRouter from "./src/modules/opportunity/opportunity.routes.js";
+import donationRouter from "./src/modules/donation/donation.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,19 +37,30 @@ app.use("/api/organization", organizationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/problem", problemRouter);
 app.use("/api/opportunities", opportunityRouter);
+app.use("/api/donations", donationRouter);
 
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-    app.listen(process.env.PORT || 5000, () => {
-      console.log(`Server running on port ${process.env.PORT || 5000}`);
+const port = process.env.PORT || 5000;
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+
+if (!process.env.MONGO_URI) {
+  console.warn("MongoDB URI is missing. Running without database connection.");
+} else {
+  mongoose
+    .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 })
+    .then(() => {
+      console.log("MongoDB connected");
+    })
+    .catch((err) => {
+      console.error(
+        "MongoDB connection error. Running in limited mode:",
+        err.message
+      );
     });
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err.message);
-  });
+}
