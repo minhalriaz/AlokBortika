@@ -1076,3 +1076,293 @@ textarea {
     justify-content: center;
   }
 }
+
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+}
+
+.page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(20, 184, 166, 0.08), transparent 30%);
+}
+
+.nav {
+  padding-inline: clamp(16px, 3vw, 32px);
+}
+
+.nav,
+.footerInner,
+.heroInner,
+.dashboardNav,
+.adminPanel,
+.authShell,
+.pageContainer {
+  width: min(100%, 1200px);
+  margin-inline: auto;
+}
+
+.nav {
+  width: calc(100% - clamp(16px, 4vw, 40px));
+  margin-top: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 22px;
+}
+
+.links {
+  flex: 1;
+  justify-content: center;
+}
+
+.navActions {
+  justify-content: flex-end;
+}
+
+.hero {
+  padding-inline: clamp(18px, 4vw, 34px);
+  padding-top: clamp(84px, 11vw, 120px);
+  padding-bottom: clamp(56px, 8vw, 88px);
+}
+
+.heroInner {
+  width: min(100%, 1120px);
+}
+
+.hero .card,
+.hero .aboutCard,
+.hero .formCard {
+  backdrop-filter: blur(10px);
+}
+
+.title {
+  max-width: 14ch;
+}
+
+.subtitle {
+  max-width: 60ch;
+}
+
+.actions > * {
+  display: inline-flex;
+}
+
+.cards,
+.dashboardGrid,
+.contactRow {
+  align-items: stretch;
+}
+
+.card,
+.aboutCard,
+.formCard,
+.tableCard,
+.miniCard {
+  padding: clamp(20px, 3vw, 30px);
+}
+
+.formGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.input,
+.formGrid input,
+.formGrid textarea,
+.formGrid select,
+.adminInput,
+.adminTextarea,
+.adminSelect {
+  min-height: 52px;
+}
+
+textarea,
+.formGrid textarea,
+.adminTextarea {
+  min-height: 140px;
+}
+
+.authShell {
+  width: min(100%, 560px);
+  margin-inline: auto;
+}
+
+.authCard {
+  width: min(100%, 560px);
+  margin-inline: auto;
+}
+
+.authForm {
+  display: grid;
+  gap: 14px;
+}
+
+.authMeta {
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.inlineAction {
+  display: inline-flex;
+  align-items: center;
+}
+
+.dashboardNav {
+  width: calc(100% - clamp(16px, 4vw, 40px));
+  top: 14px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 22px;
+}
+
+.dashboardMain {
+  padding-top: 138px;
+}
+
+.tableCard,
+.reportTable {
+  overflow-x: auto;
+}
+
+@media (max-width: 1100px) {
+  .nav {
+    row-gap: 14px;
+  }
+
+  .links {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .navActions {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 960px) {
+  .dashboardNav {
+    width: calc(100% - 24px);
+  }
+
+  .dashboardActions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .dashboardUser {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .nav {
+    width: calc(100% - 20px);
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .brand,
+  .navActions,
+  .links {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .links {
+    gap: 6px;
+  }
+
+  .linkBtn,
+  .ghostBtn,
+  .ctaBtn,
+  .primary,
+  .secondary {
+    width: 100%;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions > * {
+    width: 100%;
+  }
+
+  .title {
+    max-width: none;
+    font-size: clamp(34px, 12vw, 48px);
+  }
+
+  .subtitle {
+    font-size: 15px;
+  }
+
+  .cardTop,
+  .adminPanelHeader,
+  .dashboardNav,
+  .dashboardActions {
+    align-items: stretch;
+  }
+
+  .dashboardNav {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .dashboardMain {
+    padding-top: 170px;
+  }
+
+  .dashboardUser,
+  .dangerBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .authCard,
+  .authShell {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero {
+    min-height: auto;
+    padding-top: 74px;
+  }
+
+  .card,
+  .aboutCard,
+  .formCard,
+  .tableCard,
+  .miniCard,
+  .adminForm {
+    border-radius: 18px;
+    padding: 18px;
+  }
+
+  .heroSlideDots {
+    bottom: 0.85rem;
+  }
+
+  .reportTable th,
+  .reportTable td {
+    padding: 12px 10px;
+    font-size: 13px;
+  }
+}

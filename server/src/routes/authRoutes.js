@@ -6,6 +6,20 @@ import verifyToken from "../middlewares/verifyToken.js";
 
 const router = express.Router();
 
+const buildUserPayload = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  profilePicture: user.profilePicture || "",
+  bio: user.bio || "",
+  skills: user.skills || [],
+  completedTasks: user.completedTasks || [],
+  organizationId: user.organizationId || null,
+  status: user.status || "active",
+  isAccountVerified: Boolean(user.isAccountVerified),
+});
+
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -14,6 +28,13 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
+      });
+    }
+
+    if (role === "organization") {
+      return res.status(400).json({
+        success: false,
+        message: "Organizations must use the organization registration form.",
       });
     }
 
@@ -48,26 +69,21 @@ router.post("/signup", async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(201).json({
       success: true,
       message: "Signup successful",
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-      },
+      token,
+      user: buildUserPayload(newUser),
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
-      error: error.message,
+      message: error.message || "Server error",
     });
   }
 });
@@ -111,41 +127,60 @@ router.post("/login", async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false, // true in production with HTTPS
-      sameSite: "lax", // use "none" with secure:true if frontend/backend are on different sites
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
       success: true,
       message: "Login successful",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      token,
+      user: buildUserPayload(user),
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
-      error: error.message,
+      message: error.message || "Server error",
     });
   }
 });
-router.get("/me", verifyToken, async (req, res) => {
+
+router.get("/is-auth", verifyToken, (req, res) => {
   res.status(200).json({
     success: true,
     user: req.user,
   });
 });
 
+router.get("/me", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: buildUserPayload(user),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch user",
+    });
+  }
+});
+
 router.post("/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   });
 
   res.status(200).json({

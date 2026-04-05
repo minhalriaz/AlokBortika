@@ -63,6 +63,7 @@ export const register = async (req, res) => {
         skills: user.skills,
         completedTasks: user.completedTasks,
         organizationId: user.organizationId,
+        status: user.status,
       },
     });
   } catch (error) {
@@ -86,6 +87,14 @@ export const login = async (req, res) => {
 
     if (!user) {
       return res.json({ success: false, message: "Invalid email or password" });
+    }
+
+    if (user.status === "suspended") {
+      return res.json({ success: false, message: "Your account is suspended. Please contact an administrator." });
+    }
+
+    if (user.status === "inactive") {
+      return res.json({ success: false, message: "Your account is inactive. Please contact an administrator." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -119,6 +128,7 @@ export const login = async (req, res) => {
         skills: user.skills,
         completedTasks: user.completedTasks,
         organizationId: user.organizationId,
+        status: user.status,
       },
     });
   } catch (error) {

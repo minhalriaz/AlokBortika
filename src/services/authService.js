@@ -1,5 +1,22 @@
 import api from "../api/api";
 
+const USER_KEY = "user";
+const TOKEN_KEY = "token";
+
+const persistAuth = (user, token) => {
+  if (user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  }
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+};
+
+const clearAuth = () => {
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(TOKEN_KEY);
+};
+
 const authService = {
   async register(userData) {
     try {
@@ -10,14 +27,15 @@ const authService = {
         role: userData.role || "volunteer",
       });
 
-      if (response.data.user) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+      if (response.data.success) {
+        persistAuth(response.data.user, response.data.token);
       }
 
       return {
         success: response.data.success,
         message: response.data.message,
         user: response.data.user,
+        token: response.data.token,
       };
     } catch (error) {
       return {
@@ -34,14 +52,15 @@ const authService = {
         password: credentials.password,
       });
 
-      if (response.data.user) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+      if (response.data.success) {
+        persistAuth(response.data.user, response.data.token);
       }
 
       return {
         success: response.data.success,
         message: response.data.message,
         user: response.data.user,
+        token: response.data.token,
       };
     } catch (error) {
       return {
@@ -57,15 +76,19 @@ const authService = {
     } catch (error) {
       console.error("Logout API error:", error);
     } finally {
-      localStorage.removeItem("user");
+      clearAuth();
     }
 
     return { success: true };
   },
 
   getUserFromStorage() {
-    const user = localStorage.getItem("user");
+    const user = localStorage.getItem(USER_KEY);
     return user ? JSON.parse(user) : null;
+  },
+
+  getTokenFromStorage() {
+    return localStorage.getItem(TOKEN_KEY);
   },
 
   async getCurrentUser() {
@@ -73,7 +96,7 @@ const authService = {
       const response = await api.get("/auth/me");
 
       if (response.data.success && response.data.user) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+        persistAuth(response.data.user, response.data.token || this.getTokenFromStorage());
       }
 
       return response.data;
@@ -157,7 +180,7 @@ const authService = {
   },
 
   isLoggedIn() {
-    return !!localStorage.getItem("user");
+    return !!this.getTokenFromStorage() && !!this.getUserFromStorage();
   },
 };
 

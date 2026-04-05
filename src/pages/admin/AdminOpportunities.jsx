@@ -783,6 +783,12 @@ export default function AdminOpportunities() {
             >
               Manage Organizations
             </button>
+            <button
+              onClick={() => navigate("/admin/users")}
+              className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 pb-1 transition-colors"
+            >
+              Users & Roles
+            </button>
           </div>
         </div>
 
