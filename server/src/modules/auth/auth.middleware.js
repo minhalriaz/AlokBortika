@@ -1,10 +1,22 @@
 import jwt from "jsonwebtoken";
 
+const extractBearerToken = (req) => {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+
+  if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
+    return authHeader.split(" ")[1];
+  }
+
+  return null;
+};
+
 const userAuth = async (req, res, next) => {
-  const { token } = req.cookies;
+  const cookieToken = req.cookies?.token;
+  const bearerToken = extractBearerToken(req);
+  const token = cookieToken || bearerToken;
 
   if (!token) {
-    return res.json({
+    return res.status(401).json({
       success: false,
       message: "Not Authorized. Login Again",
     });
@@ -14,7 +26,7 @@ const userAuth = async (req, res, next) => {
     const tokenDecode = jwt.verify(token, process.env.JWT_SECRET);
 
     if (!tokenDecode.id) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         message: "Not Authorized. Login Again",
       });
@@ -23,7 +35,10 @@ const userAuth = async (req, res, next) => {
     req.body.userId = tokenDecode.id;
     next();
   } catch (error) {
-    return res.json({ success: false, message: error.message });
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+    });
   }
 };
 

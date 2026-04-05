@@ -25,24 +25,27 @@ export default function Signup() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+
+    if (formData.role === "organization") {
+      navigate("/organization/register", { replace: true });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const result = await register(formData);
 
       if (result.success) {
-        const user = result.user || JSON.parse(localStorage.getItem("user"));
+        const user = result.user || JSON.parse(localStorage.getItem("user") || "null");
 
         if (user?.role === "volunteer") {
-  navigate("/volunteer-dashboard");
-} else if (user?.role === "organization") {
-  navigate("/organization-dashboard");
-} else if (user?.role === "admin") {
-  navigate("/admin-dashboard");
-} else {
-  navigate("/");
-}
-
+          navigate("/volunteer-dashboard", { replace: true });
+        } else if (user?.role === "admin") {
+          navigate("/admin", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
       } else {
         setError(result.message || "Signup failed. Please try again.");
       }
@@ -59,63 +62,17 @@ export default function Signup() {
       <div className="bgGlow bgGlow2" />
 
       <div className="hero">
-        <div className="heroInner">
+        <div className="heroInner authShell">
           <div className="badge">Join AlokBortika</div>
           <h1 className="title">Sign up</h1>
-          <p className="subtitle">Create an account to submit and follow progress.</p>
+          <p className="subtitle">Create an admin, organizer, or volunteer account.</p>
 
-          <div className="card" style={{ maxWidth: 520 }}>
+          <div className="card authCard" style={{ maxWidth: 520 }}>
             {error ? <p className="messageError">{error}</p> : null}
 
-            <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+            <form className="authForm" onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
               <label>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Full name</div>
-                <input
-                  className="input"
-                  type="text"
-                  name="name"
-                  placeholder="Your name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </label>
-
-              <label>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Email</div>
-                <input
-                  className="input"
-                  type="email"
-                  name="email"
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </label>
-
-              <label>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Password</div>
-                <input
-                  className="input"
-                  type="password"
-                  name="password"
-                  placeholder="Create a password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  minLength={6}
-                />
-                <small style={{ color: "var(--muted)", fontSize: "0.8rem", marginTop: 4 }}>
-                  Password must be at least 6 characters long
-                </small>
-              </label>
-
-              <label>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Account Type</div>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Account type</div>
                 <select
                   className="input"
                   name="role"
@@ -124,17 +81,84 @@ export default function Signup() {
                   disabled={loading}
                 >
                   <option value="volunteer">Volunteer</option>
-                  <option value="organization">Organization</option>
                   <option value="admin">Admin</option>
+                  <option value="organization">Organizer / Organization</option>
                 </select>
               </label>
 
-              <button className="primary" type="submit" disabled={loading}>
-                {loading ? "Creating account..." : "Create account"}
-              </button>
+              {formData.role === "organization" ? (
+                <div
+                  style={{
+                    border: "1px solid var(--border)",
+                    borderRadius: 14,
+                    padding: 16,
+                    background: "rgba(15,118,110,0.05)",
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>Organization registration has its own form.</div>
+                  <div style={{ color: "var(--muted)", marginBottom: 12 }}>
+                    Continue to the organizer registration page to submit your organization details.
+                  </div>
+                  <Link to="/organization/register" className="primary" style={{ display: "inline-block", textDecoration: "none" }}>
+                    Open Organization Registration
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <label>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Full name</div>
+                    <input
+                      className="input"
+                      type="text"
+                      name="name"
+                      placeholder="Your name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                    />
+                  </label>
+
+                  <label>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Email</div>
+                    <input
+                      className="input"
+                      type="email"
+                      name="email"
+                      placeholder="you@example.com"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                    />
+                  </label>
+
+                  <label>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Password</div>
+                    <input
+                      className="input"
+                      type="password"
+                      name="password"
+                      placeholder="Create a password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                      minLength={6}
+                    />
+                    <small style={{ color: "var(--muted)", fontSize: "0.8rem", marginTop: 4 }}>
+                      Password must be at least 6 characters long
+                    </small>
+                  </label>
+
+                  <button className="primary" type="submit" disabled={loading}>
+                    {loading ? "Creating account..." : `Create ${formData.role} account`}
+                  </button>
+                </>
+              )}
 
               <div className="authMeta">
-                Already have an account?{" "}
+                Already have an account? {" "}
                 <Link to="/login" className="inlineLink">
                   Login
                 </Link>

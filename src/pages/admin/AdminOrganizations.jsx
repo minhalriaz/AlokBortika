@@ -36,7 +36,7 @@ const AdminOrganizations = () => {
     try {
       setLoading(true);
       const res = await api.get("/admin/organizations");
-      setOrganizations(res.data.data || []);
+      setOrganizations(res.data.organizations || []);
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to fetch organizations");
     } finally {
@@ -205,6 +205,12 @@ const AdminOrganizations = () => {
               className="text-sm font-medium text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600 dark:border-emerald-400 pb-1"
             >
               Manage Organizations
+            </button>
+            <button
+              onClick={() => navigate("/admin/users")}
+              className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 pb-1 transition-colors"
+            >
+              Users & Roles
             </button>
           </div>
         </div>

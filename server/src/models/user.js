@@ -65,9 +65,15 @@ const userSchema = new mongoose.Schema(
 
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Organization",
       default: null,
       description: "For volunteers: which organization they belong to",
+    },
+
+    status: {
+      type: String,
+      enum: ["active", "inactive", "suspended"],
+      default: "active",
     },
 
     verifyOtp: { type: String, default: "" },

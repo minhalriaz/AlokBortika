@@ -26,8 +26,9 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       // First check if we have user in localStorage
       const storedUser = authService.getUserFromStorage();
+      const storedToken = authService.getTokenFromStorage();
       
-      if (storedUser) {
+      if (storedUser && storedToken) {
         // Verify with backend that the session is still valid
         const authCheck = await authService.checkAuth();
         if (authCheck.success) {
@@ -65,7 +66,6 @@ export const AuthProvider = ({ children }) => {
   try {
     const response = await authService.register(userData);
     if (response.success) {
-      localStorage.setItem("user", JSON.stringify(response.user));
       setUser(response.user);
       setIsAuthenticated(true);
       return {
@@ -85,7 +85,6 @@ export const AuthProvider = ({ children }) => {
   try {
     const response = await authService.login(credentials);
     if (response.success) {
-      localStorage.setItem("user", JSON.stringify(response.user));
       setUser(response.user);
       setIsAuthenticated(true);
       return {
@@ -107,7 +106,6 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem("user");
       setUser(null);
       setIsAuthenticated(false);
     }

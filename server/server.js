@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -23,9 +24,10 @@ console.log("API Key:", process.env.CLOUDINARY_API_KEY);
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
     credentials: true,
   })
 );

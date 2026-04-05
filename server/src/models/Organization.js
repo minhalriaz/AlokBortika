@@ -16,7 +16,6 @@ const organizationSchema = new mongoose.Schema(
     focusArea: {
       type: [String],
       default: [],
-      description: "Areas of focus (e.g., sanitation, education, health)",
     },
     location: {
       village: String,
@@ -35,6 +34,11 @@ const organizationSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      default: "",
     },
     description: {
       type: String,
@@ -43,17 +47,36 @@ const organizationSchema = new mongoose.Schema(
     services: {
       type: [String],
       default: [],
-      description: "Services or projects they handle",
+    },
+    website: {
+      type: String,
+      default: "",
+    },
+    logo: {
+      type: String,
+      default: "",
+    },
+    establishedYear: {
+      type: Number,
+      default: null,
+    },
+    registrationNumber: {
+      type: String,
+      default: "",
     },
     status: {
       type: String,
-      enum: ["active", "inactive"],
+      enum: ["active", "inactive", "pending"],
       default: "active",
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      description: "Admin who created this organization",
+      default: null,
+    },
+    selfRegistered: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

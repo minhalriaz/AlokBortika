@@ -1,4 +1,5 @@
 import express from "express";
+import verifyToken from "../middlewares/verifyToken.js";
 import {
   getAllOrganizations,
   getOrganizationsAdmin,
@@ -6,26 +7,35 @@ import {
   updateOrganization,
   deleteOrganization,
   getOrganizationById,
+  approveOrganization,
+  getPendingOrganizations,
+  getUsersAdmin,
+  getOrganizationOptions,
+  updateUserAdmin,
+  deleteUserAdmin,
 } from "../modules/admin/admin.controller.js";
 
 const adminRouter = express.Router();
 
-// Public - Get all active organizations
-adminRouter.get("/organizations", getAllOrganizations);
+adminRouter.get("/public-organizations", getAllOrganizations);
+adminRouter.get("/organizations", verifyToken, getOrganizationsAdmin);
+adminRouter.post("/organizations-list", verifyToken, getOrganizationsAdmin);
+adminRouter.get("/organizations/pending", verifyToken, getPendingOrganizations);
+adminRouter.post("/organizations-pending", verifyToken, getPendingOrganizations);
+adminRouter.post("/organizations", verifyToken, createOrganization);
+adminRouter.post("/create-organization", verifyToken, createOrganization);
+adminRouter.put("/organizations/:organizationId", verifyToken, updateOrganization);
+adminRouter.put("/organization/:organizationId", verifyToken, updateOrganization);
+adminRouter.post("/organizations/:organizationId/approve", verifyToken, approveOrganization);
+adminRouter.post("/organization/:organizationId/approve", verifyToken, approveOrganization);
+adminRouter.delete("/organizations/:organizationId", verifyToken, deleteOrganization);
+adminRouter.delete("/organization/:organizationId", verifyToken, deleteOrganization);
+adminRouter.get("/organizations/:organizationId", verifyToken, getOrganizationById);
+adminRouter.get("/organization/:organizationId", verifyToken, getOrganizationById);
 
-// Admin only - Get all organizations with details
-adminRouter.post("/organizations-list", getOrganizationsAdmin);
-
-// Admin only - Create organization
-adminRouter.post("/create-organization", createOrganization);
-
-// Admin only - Update organization
-adminRouter.put("/organization/:organizationId", updateOrganization);
-
-// Admin only - Delete organization (mark as inactive)
-adminRouter.delete("/organization/:organizationId", deleteOrganization);
-
-// Get organization by ID
-adminRouter.get("/organization/:organizationId", getOrganizationById);
+adminRouter.get("/users", verifyToken, getUsersAdmin);
+adminRouter.get("/user-options/organizations", verifyToken, getOrganizationOptions);
+adminRouter.patch("/users/:userId", verifyToken, updateUserAdmin);
+adminRouter.delete("/users/:userId", verifyToken, deleteUserAdmin);
 
 export default adminRouter;
