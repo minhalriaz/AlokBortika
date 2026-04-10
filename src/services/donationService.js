@@ -19,18 +19,9 @@ const donationService = {
     }
   },
 
-  async createCheckoutSession(donationData) {
+  async initPayment(donationData) {
     try {
-      const response = await api.post("/donations/checkout-session", donationData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { success: false, message: error.message };
-    }
-  },
-
-  async verifyCheckoutSession(sessionId) {
-    try {
-      const response = await api.post("/donations/verify-session", { sessionId });
+      const response = await api.post("/donations/init-payment", donationData);
       return response.data;
     } catch (error) {
       throw error.response?.data || { success: false, message: error.message };

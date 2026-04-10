@@ -1,5 +1,6 @@
 import donationModel from "./donation.model.js";
 import mongoose from "mongoose";
+import SSLCommerzPayment from "sslcommerz-lts";
 
 const PAYMENT_METHOD_LABELS = {
   card: "Card",
@@ -43,10 +44,6 @@ function normalizeBoolean(value) {
   return false;
 }
 
-function sanitizeMetadataValue(value) {
-  return String(value || "").slice(0, 500);
-}
-
 function isDatabaseConnected() {
   return mongoose.connection.readyState === 1;
 }
@@ -78,22 +75,41 @@ function createInMemoryDonation(payload) {
   return donation;
 }
 
-function findInMemoryDonationBySessionId(sessionId) {
-  return inMemoryDonations.find((item) => item.stripeSessionId === sessionId);
+function updateInMemoryDonationStatus(transactionId, status) {
+  const donation = inMemoryDonations.find(
+    (item) => item.transactionId === transactionId
+  );
+
+  if (donation) {
+    donation.status = status;
+    donation.updatedAt = new Date();
+    if (status === "Received") {
+      donation.donatedAt = new Date();
+    }
+  }
+
+  return donation;
 }
 
 function getInMemoryDonationStats() {
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  const totalAmount = inMemoryDonations.reduce(
+
+  const successfulDonations = inMemoryDonations.filter(
+    (donation) => donation.status === "Received"
+  );
+
+  const totalAmount = successfulDonations.reduce(
     (sum, donation) => sum + (Number(donation.amount) || 0),
     0
   );
-  const donorCount = inMemoryDonations.length;
-  const monthAmount = inMemoryDonations
+
+  const donorCount = successfulDonations.length;
+
+  const monthAmount = successfulDonations
     .filter((donation) => new Date(donation.donatedAt) >= monthStart)
     .reduce((sum, donation) => sum + (Number(donation.amount) || 0), 0);
 
-  const recentDonations = [...inMemoryDonations]
+  const recentDonations = [...successfulDonations]
     .sort(
       (a, b) =>
         new Date(b.createdAt || b.donatedAt) - new Date(a.createdAt || a.donatedAt)
@@ -108,33 +124,6 @@ function getInMemoryDonationStats() {
   };
 }
 
-async function stripeRequest(path, { method = "GET", params } = {}) {
-  const secret = process.env.STRIPE_SECRET_KEY;
-  const url = `https://api.stripe.com/v1${path}`;
-  const options = {
-    method,
-    headers: {
-      Authorization: `Bearer ${secret}`,
-    },
-  };
-
-  if (params) {
-    options.headers["Content-Type"] = "application/x-www-form-urlencoded";
-    options.body = params.toString();
-  }
-
-  const response = await fetch(url, options);
-  const data = await response.json();
-
-  if (!response.ok) {
-    const message =
-      data?.error?.message || "Stripe request failed. Please try again.";
-    throw new Error(message);
-  }
-
-  return data;
-}
-
 function formatDonationResponse(donation) {
   return {
     id: donation._id,
@@ -146,6 +135,7 @@ function formatDonationResponse(donation) {
     campaignId: donation.campaignId,
     campaignTitle: donation.campaignTitle,
     donatedAt: donation.donatedAt,
+    transactionId: donation.transactionId,
   };
 }
 
@@ -202,6 +192,7 @@ export const createDonation = async (req, res) => {
       note: note?.trim() || "",
       isAnonymous: normalizeBoolean(isAnonymous),
       status: transactionId ? "Received" : "Pending Verification",
+      donatedAt: transactionId ? new Date() : null,
     };
 
     const donation = isDatabaseConnected()
@@ -218,7 +209,7 @@ export const createDonation = async (req, res) => {
   }
 };
 
-export const createStripeCheckoutSession = async (req, res) => {
+export const initSSLCommerzPayment = async (req, res) => {
   const {
     donorName,
     donorEmail,
@@ -230,10 +221,10 @@ export const createStripeCheckoutSession = async (req, res) => {
     isAnonymous,
   } = req.body;
 
-  if (!process.env.STRIPE_SECRET_KEY) {
+  if (!process.env.SSL_STORE_ID || !process.env.SSL_STORE_PASSWORD) {
     return res.status(500).json({
       success: false,
-      message: "Stripe key is not configured on server.",
+      message: "SSLCommerz is not configured on server.",
     });
   }
 
@@ -259,134 +250,176 @@ export const createStripeCheckoutSession = async (req, res) => {
     });
   }
 
-  const amountInMinor = Math.round(parsedAmount * 100);
-  const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
-
-  const params = new URLSearchParams();
-  params.set("mode", "payment");
-  params.set("success_url", `${clientUrl}/donate?payment=success&session_id={CHECKOUT_SESSION_ID}`);
-  params.set("cancel_url", `${clientUrl}/donate?payment=cancelled`);
-  params.set("payment_method_types[0]", "card");
-  params.set("line_items[0][quantity]", "1");
-  params.set("line_items[0][price_data][currency]", "bdt");
-  params.set("line_items[0][price_data][unit_amount]", String(amountInMinor));
-  params.set(
-    "line_items[0][price_data][product_data][name]",
-    `Donation - ${campaignTitle || "AlokBortika"}`
-  );
-  params.set(
-    "line_items[0][price_data][product_data][description]",
-    "Community donation for local problem solving."
-  );
-  params.set("customer_email", donorEmail.trim());
-  params.set("metadata[donorName]", sanitizeMetadataValue(donorName));
-  params.set("metadata[donorEmail]", sanitizeMetadataValue(donorEmail));
-  params.set("metadata[donorPhone]", sanitizeMetadataValue(donorPhone));
-  params.set("metadata[campaignId]", sanitizeMetadataValue(campaignId));
-  params.set("metadata[campaignTitle]", sanitizeMetadataValue(campaignTitle));
-  params.set("metadata[note]", sanitizeMetadataValue(note));
-  params.set("metadata[isAnonymous]", String(normalizeBoolean(isAnonymous)));
-  params.set("metadata[paymentMethod]", "Card");
-
   try {
-    const session = await stripeRequest("/checkout/sessions", {
-      method: "POST",
-      params,
-    });
-
-    return res.json({
-      success: true,
-      sessionId: session.id,
-      checkoutUrl: session.url,
-    });
-  } catch (error) {
-    return res.status(400).json({ success: false, message: error.message });
-  }
-};
-
-export const verifyStripeCheckoutSession = async (req, res) => {
-  const { sessionId } = req.body;
-
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return res.status(500).json({
-      success: false,
-      message: "Stripe key is not configured on server.",
-    });
-  }
-
-  if (!sessionId) {
-    return res.status(400).json({
-      success: false,
-      message: "Session id is required.",
-    });
-  }
-
-  try {
-    const session = await stripeRequest(`/checkout/sessions/${sessionId}`, {
-      method: "GET",
-    });
-
-    if (session.payment_status !== "paid") {
-      return res.status(400).json({
-        success: false,
-        message: "Payment is not completed yet.",
-      });
-    }
-
-    const existingDonation = isDatabaseConnected()
-      ? await donationModel.findOne({ stripeSessionId: session.id })
-      : findInMemoryDonationBySessionId(session.id);
-
-    if (existingDonation) {
-      return res.json({
-        success: true,
-        message: "Payment already verified.",
-        donation: formatDonationResponse(existingDonation),
-      });
-    }
-
-    const metadata = session.metadata || {};
-    const donorEmail =
-      session.customer_details?.email ||
-      session.customer_email ||
-      metadata.donorEmail;
-    const donorName = metadata.donorName || donorEmail || "Anonymous Donor";
-
-    if (!donorEmail) {
-      return res.status(400).json({
-        success: false,
-        message: "Unable to verify donor email from payment gateway.",
-      });
-    }
+    const transactionId = `DON-${Date.now()}`;
+    const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:5000/api";
 
     const donationPayload = {
       donorName: donorName.trim(),
       donorEmail: donorEmail.trim(),
-      donorPhone: metadata.donorPhone || "",
-      campaignId: metadata.campaignId || "",
-      campaignTitle: metadata.campaignTitle || "Community Campaign",
-      amount: Number(session.amount_total || 0) / 100,
-      currency: (session.currency || "BDT").toUpperCase(),
-      paymentMethod: normalizePaymentMethod(metadata.paymentMethod) || "Card",
-      paymentGateway: "Stripe Checkout",
-      transactionId: session.payment_intent || session.id,
-      stripeSessionId: session.id,
-      note: metadata.note || "",
-      isAnonymous: normalizeBoolean(metadata.isAnonymous),
-      status: "Received",
+      donorPhone: donorPhone?.trim() || "",
+      campaignId: campaignId?.trim() || "",
+      campaignTitle: campaignTitle?.trim() || "AlokBortika",
+      amount: parsedAmount,
+      currency: "BDT",
+      paymentMethod: "Card",
+      paymentGateway: "SSLCommerz",
+      transactionId,
+      note: note?.trim() || "",
+      isAnonymous: normalizeBoolean(isAnonymous),
+      status: "Pending",
     };
 
-    const donation = isDatabaseConnected()
-      ? await donationModel.create(donationPayload)
-      : createInMemoryDonation(donationPayload);
+    await (isDatabaseConnected()
+      ? donationModel.create(donationPayload)
+      : createInMemoryDonation(donationPayload));
+
+    const sslcz = new SSLCommerzPayment(
+      process.env.SSL_STORE_ID,
+      process.env.SSL_STORE_PASSWORD,
+      process.env.SSL_IS_LIVE === "true"
+    );
+
+    const data = {
+      total_amount: parsedAmount,
+      currency: "BDT",
+      tran_id: transactionId,
+      success_url: `${apiBaseUrl}/donations/success`,
+      fail_url: `${apiBaseUrl}/donations/fail`,
+      cancel_url: `${apiBaseUrl}/donations/cancel`,
+      shipping_method: "NO",
+      product_name: donationPayload.campaignTitle,
+      product_category: "Donation",
+      product_profile: "general",
+      cus_name: donorName.trim(),
+      cus_email: donorEmail.trim(),
+      cus_add1: "Dhaka",
+      cus_city: "Dhaka",
+      cus_country: "Bangladesh",
+      cus_phone: donorPhone?.trim() || "01700000000",
+      value_a: campaignId?.trim() || "",
+      value_b: note?.trim() || "",
+      value_c: String(normalizeBoolean(isAnonymous)),
+      value_d: "AlokBortika Donation",
+    };
+
+    const apiResponse = await sslcz.init(data);
+
+    if (!apiResponse?.GatewayPageURL) {
+      return res.status(400).json({
+        success: false,
+        message: "Unable to generate SSLCommerz payment URL.",
+      });
+    }
 
     return res.json({
       success: true,
-      message: "Payment verified and donation recorded.",
-      donation: formatDonationResponse(donation),
+      message: "Payment session created successfully.",
+      gatewayUrl: apiResponse.GatewayPageURL,
+      transactionId,
     });
   } catch (error) {
-    return res.status(400).json({ success: false, message: error.message });
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Payment initiation failed.",
+    });
+  }
+};
+
+export const paymentSuccess = async (req, res) => {
+  try {
+    const transactionId =
+  req.body?.tran_id ||
+  req.query?.tran_id ||
+  req.body?.transactionId ||
+  req.query?.transactionId;
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+
+    if (!transactionId) {
+      return res.redirect(`${clientUrl}/donate?payment=failed`);
+    }
+
+    let donation;
+
+    if (isDatabaseConnected()) {
+      donation = await donationModel.findOneAndUpdate(
+        { transactionId },
+        {
+          status: "Received",
+          donatedAt: new Date(),
+        },
+        { new: true }
+      );
+    } else {
+      donation = updateInMemoryDonationStatus(transactionId, "Received");
+    }
+
+    if (!donation) {
+      return res.redirect(`${clientUrl}/donate?payment=failed`);
+    }
+
+    return res.redirect(
+      `${clientUrl}/donate?payment=success&transactionId=${transactionId}`
+    );
+  } catch (error) {
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+    return res.redirect(`${clientUrl}/donate?payment=failed`);
+  }
+};
+
+export const paymentFail = async (req, res) => {
+  try {
+    const transactionId =
+  req.body?.tran_id ||
+  req.query?.tran_id ||
+  req.body?.transactionId ||
+  req.query?.transactionId;
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+
+    if (transactionId) {
+      if (isDatabaseConnected()) {
+        await donationModel.findOneAndUpdate(
+          { transactionId },
+          { status: "Failed" },
+          { new: true }
+        );
+      } else {
+        updateInMemoryDonationStatus(transactionId, "Failed");
+      }
+    }
+
+    return res.redirect(`${clientUrl}/donate?payment=failed`);
+  } catch (error) {
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+    return res.redirect(`${clientUrl}/donate?payment=failed`);
+  }
+};
+
+export const paymentCancel = async (req, res) => {
+  try {
+    const transactionId =
+  req.body?.tran_id ||
+  req.query?.tran_id ||
+  req.body?.transactionId ||
+  req.query?.transactionId;
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+
+    if (transactionId) {
+      if (isDatabaseConnected()) {
+        await donationModel.findOneAndUpdate(
+          { transactionId },
+          { status: "Cancelled" },
+          { new: true }
+        );
+      } else {
+        updateInMemoryDonationStatus(transactionId, "Cancelled");
+      }
+    }
+
+    return res.redirect(`${clientUrl}/donate?payment=cancelled`);
+  } catch (error) {
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+    return res.redirect(`${clientUrl}/donate?payment=cancelled`);
   }
 };
 
@@ -418,6 +451,11 @@ export const getDonationStats = async (_req, res) => {
     const [totals, monthTotals, recentDonations] = await Promise.all([
       donationModel.aggregate([
         {
+          $match: {
+            status: "Received",
+          },
+        },
+        {
           $group: {
             _id: null,
             totalAmount: { $sum: "$amount" },
@@ -428,6 +466,7 @@ export const getDonationStats = async (_req, res) => {
       donationModel.aggregate([
         {
           $match: {
+            status: "Received",
             donatedAt: {
               $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
             },
@@ -441,7 +480,7 @@ export const getDonationStats = async (_req, res) => {
         },
       ]),
       donationModel
-        .find({})
+        .find({ status: "Received" })
         .sort({ createdAt: -1 })
         .limit(5)
         .select(

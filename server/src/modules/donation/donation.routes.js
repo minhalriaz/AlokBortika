@@ -1,16 +1,20 @@
 import express from "express";
 import {
   createDonation,
-  createStripeCheckoutSession,
   getDonationStats,
-  verifyStripeCheckoutSession,
+  initSSLCommerzPayment,
+  paymentSuccess,
+  paymentFail,
+  paymentCancel,
 } from "./donation.controller.js";
 
 const donationRouter = express.Router();
 
 donationRouter.post("/", createDonation);
-donationRouter.post("/checkout-session", createStripeCheckoutSession);
-donationRouter.post("/verify-session", verifyStripeCheckoutSession);
+donationRouter.post("/init-payment", initSSLCommerzPayment);
+donationRouter.post("/success", paymentSuccess);
+donationRouter.post("/fail", paymentFail);
+donationRouter.post("/cancel", paymentCancel);
 donationRouter.get("/stats", getDonationStats);
 
 export default donationRouter;
