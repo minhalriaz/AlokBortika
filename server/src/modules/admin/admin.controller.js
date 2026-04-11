@@ -10,8 +10,19 @@ const ORGANIZATION_OPTION_STATUSES = ["active"];
 
 const ensureAdmin = async (userId) => {
   if (!userId) return null;
+
   const user = await userModel.findById(userId);
-  if (!user || user.role !== "admin") return null;
+
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.toLowerCase();
+
+  if (
+    !user ||
+    user.role !== "admin" ||
+    user.email.toLowerCase() !== ADMIN_EMAIL
+  ) {
+    return null;
+  }
+
   return user;
 };
 
