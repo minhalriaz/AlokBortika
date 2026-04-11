@@ -8,6 +8,7 @@ const tabs = [
   { key: "opportunities", label: "Volunteer Opportunities", path: "/admin" },
   { key: "organizations", label: "Manage Organizations", path: "/admin/organizations" },
   { key: "users", label: "Users & Roles", path: "/admin/users" },
+  { key: "problems", label: "Manage Problems", path: "/admin/problems" }, 
 ];
 
 const topRowStyle = {

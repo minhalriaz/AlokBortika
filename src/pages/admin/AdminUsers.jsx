@@ -113,6 +113,7 @@ const fetchOrganizations = useCallback(async () => {
             <button onClick={() => navigate("/admin")} className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 pb-1 transition-colors">Volunteer Opportunities</button>
             <button onClick={() => navigate("/admin/organizations")} className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 pb-1 transition-colors">Manage Organizations</button>
             <button onClick={() => navigate("/admin/users")} className="text-sm font-medium text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600 dark:border-emerald-400 pb-1">Users & Roles</button>
+            <button onClick={() => navigate("/admin/problems")} className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 pb-1 transition-colors">Manage Problems</button>
           </div>
         </div>
 

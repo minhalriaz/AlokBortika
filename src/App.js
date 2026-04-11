@@ -20,6 +20,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OrgProtectedRoute from "./components/OrgProtectedRoute";
 import { Toaster } from "react-hot-toast";
+import AdminProblems from "./pages/admin/AdminProblems";
 function Landing({ theme, toggleTheme }) {
   const slides = [
     {
@@ -487,6 +488,7 @@ export default function App() {
         <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOpportunities /></ProtectedRoute>} />
         <Route path="/admin/organizations" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOrganizations /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsers /></ProtectedRoute>} />
+        <Route path="/admin/problems" element={<ProtectedRoute allowedRoles={["admin"]}><AdminProblems /></ProtectedRoute>} />
       </Routes>
     </>
   );

@@ -796,6 +796,12 @@ export default function AdminOpportunities() {
             >
               Users & Roles
             </button>
+            <button
+              onClick={() => navigate("/admin/problems")}
+              className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 pb-1 transition-colors"
+            >
+              Manage Problems
+            </button>
           </div>
         </div>
 
