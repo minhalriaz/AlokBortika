@@ -1,5 +1,6 @@
 import express from "express";
 import upload from "../middlewares/upload.middleware.js";
+import verifyToken from "../middlewares/verifyToken.js";
 import {
   getVolunteerDashboard,
   getVolunteerProfile,
@@ -11,11 +12,11 @@ import {
 
 const router = express.Router();
 
-router.post("/dashboard", getVolunteerDashboard);
-router.post("/profile", getVolunteerProfile);
-router.put("/profile", updateVolunteerProfile);
-router.post("/profile-picture", upload.single("image"), uploadProfilePicture);
-router.post("/assign/:problemId", assignProblemToVolunteer);
-router.post("/done/:problemId", markProblemDone);
+router.post("/dashboard", verifyToken, getVolunteerDashboard);
+router.post("/profile", verifyToken, getVolunteerProfile);
+router.put("/profile", verifyToken, updateVolunteerProfile);
+router.post("/profile-picture", verifyToken, upload.single("image"), uploadProfilePicture);
+router.post("/assign/:problemId", verifyToken, assignProblemToVolunteer);
+router.post("/done/:problemId", verifyToken, markProblemDone);
 
 export default router;

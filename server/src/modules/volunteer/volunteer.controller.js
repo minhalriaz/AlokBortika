@@ -2,10 +2,12 @@ import userModel from "../../models/user.js";
 import problemModel from "../problem/problem.model.js";
 import cloudinary from "../../config/cloudinary.js";
 
+const getRequestUserId = (req) => req.userId || req.body?.userId || req.user?.id || null;
+
 export const getVolunteerDashboard = async (req, res) => {
   try {
     const user = await userModel
-      .findById(req.body.userId)
+      .findById(getRequestUserId(req))
       .select("-password")
       .populate("organizationId", "name type");
 
@@ -75,7 +77,7 @@ export const getVolunteerDashboard = async (req, res) => {
 export const getVolunteerProfile = async (req, res) => {
   try {
     const user = await userModel
-      .findById(req.body.userId)
+      .findById(getRequestUserId(req))
       .select("-password")
       .populate("organizationId", "name email");
 
@@ -104,7 +106,7 @@ export const updateVolunteerProfile = async (req, res) => {
     };
 
     const user = await userModel
-      .findByIdAndUpdate(req.body.userId, updateData, { new: true })
+      .findByIdAndUpdate(getRequestUserId(req), updateData, { new: true })
       .select("-password");
 
     return res.json({
@@ -129,7 +131,7 @@ export const uploadProfilePicture = async (req, res) => {
     console.log("Cloudinary result:", result.secure_url);
 
     const user = await userModel.findByIdAndUpdate(
-      req.body.userId,
+      getRequestUserId(req),
       { profilePicture: result.secure_url },
       { new: true }
     ).select("-password");
@@ -148,7 +150,7 @@ export const assignProblemToVolunteer = async (req, res) => {
   try {
     const { problemId } = req.params;
 
-    const user = await userModel.findById(req.body.userId);
+    const user = await userModel.findById(getRequestUserId(req));
     if (!user) {
       return res.json({ success: false, message: "Volunteer not found" });
     }
@@ -180,7 +182,7 @@ export const markProblemDone = async (req, res) => {
   try {
     const { problemId } = req.params;
 
-    const user = await userModel.findById(req.body.userId);
+    const user = await userModel.findById(getRequestUserId(req));
     if (!user) {
       return res.json({ success: false, message: "Volunteer not found" });
     }

@@ -53,9 +53,7 @@ export default function ForgotPassword() {
   };
 
   const handleResendOtp = async () => {
-    if (resendTimer > 0) {
-      return;
-    }
+    if (resendTimer > 0) return;
 
     setError("");
     setSuccess("");
@@ -120,145 +118,181 @@ export default function ForgotPassword() {
     }
   };
 
+  const stepInfo = [
+    { title: "Verify Email", subtitle: "Enter your email to receive a reset code" },
+    { title: "Enter OTP", subtitle: "Check your email for the verification code" },
+    { title: "New Password", subtitle: "Create a new secure password" },
+  ];
+
   return (
     <div className="page">
       <div className="bgGlow bgGlow1" />
       <div className="bgGlow bgGlow2" />
 
-      <div className="hero">
-        <div className="heroInner">
-          <div className="badge">Reset Password</div>
-          <h1 className="title">Forgot Password?</h1>
-          <p className="subtitle">
-            {step === 1 ? "Enter your email to receive an OTP" : null}
-            {step === 2 ? "Enter the OTP sent to your email" : null}
-            {step === 3 ? "Set your new password" : null}
-          </p>
+      <div className="authPage">
+        <div className="authContainer">
+          <div className="authLeft">
+            <div className="authLeftContent">
+              <Link to="/" className="authLogo">
+                AlokBortika
+              </Link>
+              <h1>Reset your password</h1>
+              <p>Follow the steps to recover access to your account.</p>
+              <div className="authFeatures">
+                <div className="authFeature">
+                  <span className="authFeatureIcon">1</span>
+                  <span>Enter your registered email</span>
+                </div>
+                <div className="authFeature">
+                  <span className="authFeatureIcon">2</span>
+                  <span>Verify with OTP code</span>
+                </div>
+                <div className="authFeature">
+                  <span className="authFeatureIcon">3</span>
+                  <span>Create new password</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <div className="card" style={{ maxWidth: 560 }}>
-            {error ? <p className="messageError">{error}</p> : null}
-            {success ? <p className="messageSuccess">{success}</p> : null}
+          <div className="authRight">
+            <div className="authFormContainer">
+              <div className="authFormHeader">
+                <h2>{stepInfo[step - 1].title}</h2>
+                <p>{stepInfo[step - 1].subtitle}</p>
+              </div>
 
-            {step === 1 ? (
-              <form onSubmit={handleSendOtp} style={{ display: "grid", gap: 12 }}>
-                <label>
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Email Address</div>
-                  <input
-                    className="input"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    required
-                    disabled={loading}
+              <div className="authStepIndicator">
+                {[1, 2, 3].map((s) => (
+                  <div
+                    key={s}
+                    className={`authStepDot ${s === step ? "active" : ""} ${s < step ? "completed" : ""}`}
                   />
-                </label>
+                ))}
+              </div>
 
-                <button className="primary" type="submit" disabled={loading}>
-                  {loading ? "Sending..." : "Send Reset OTP"}
-                </button>
-              </form>
-            ) : null}
+              {error && <div className="authError">{error}</div>}
+              {success && <div className="authSuccess">{success}</div>}
 
-            {step === 2 ? (
-              <form onSubmit={handleVerifyOtp} style={{ display: "grid", gap: 12 }}>
-                <label>
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Enter OTP</div>
-                  <input
-                    className="input"
-                    type="text"
-                    placeholder="6-digit OTP"
-                    value={otp}
-                    onChange={(event) =>
-                      setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
-                    maxLength={6}
-                    required
-                    disabled={loading}
-                  />
-                  <small style={{ color: "var(--muted)", fontSize: "0.8rem", marginTop: 4 }}>
-                    Enter the 6-digit code from your email
-                  </small>
-                </label>
+              {step === 1 && (
+                <form className="authFormFields" onSubmit={handleSendOtp}>
+                  <div className="formGroup">
+                    <label htmlFor="email">Email Address</label>
+                    <input
+                      id="email"
+                      className="authInput"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
 
-                <button className="primary" type="submit" disabled={loading}>
-                  Continue
-                </button>
+                  <button className="authSubmitBtn" type="submit" disabled={loading}>
+                    {loading ? "Sending..." : "Send Reset Code"}
+                  </button>
+                </form>
+              )}
 
-                <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
+              {step === 2 && (
+                <form className="authFormFields" onSubmit={handleVerifyOtp}>
+                  <div className="formGroup">
+                    <label htmlFor="otp">6-Digit OTP</label>
+                    <input
+                      id="otp"
+                      className="authInput otpInput"
+                      type="text"
+                      placeholder="Enter 6-digit code"
+                      value={otp}
+                      onChange={(event) =>
+                        setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))
+                      }
+                      maxLength={6}
+                      required
+                      disabled={loading}
+                    />
+                    <small className="authHint">Enter the code sent to your email</small>
+                  </div>
+
+                  <button className="authSubmitBtn" type="submit" disabled={loading}>
+                    Verify OTP
+                  </button>
+
                   <button
                     type="button"
+                    className="authResendBtn"
                     onClick={handleResendOtp}
                     disabled={resendTimer > 0 || loading}
-                    className="ghostBtn"
                   >
-                    {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+                    {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend OTP Code"}
                   </button>
-                </div>
-              </form>
-            ) : null}
+                </form>
+              )}
 
-            {step === 3 ? (
-              <form onSubmit={handleResetPassword} style={{ display: "grid", gap: 12 }}>
-                <label>
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}>New Password</div>
-                  <input
-                    className="input"
-                    type="password"
-                    placeholder="Enter new password"
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    required
-                    minLength={6}
-                    disabled={loading}
-                  />
-                </label>
+              {step === 3 && (
+                <form className="authFormFields" onSubmit={handleResetPassword}>
+                  <div className="formGroup">
+                    <label htmlFor="newPassword">New Password</label>
+                    <input
+                      id="newPassword"
+                      className="authInput"
+                      type="password"
+                      placeholder="Create new password"
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                      required
+                      minLength={6}
+                      disabled={loading}
+                    />
+                  </div>
 
-                <label>
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}>Confirm Password</div>
-                  <input
-                    className="input"
-                    type="password"
-                    placeholder="Confirm new password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    required
-                    minLength={6}
-                    disabled={loading}
-                  />
-                </label>
+                  <div className="formGroup">
+                    <label htmlFor="confirmPassword">Confirm Password</label>
+                    <input
+                      id="confirmPassword"
+                      className="authInput"
+                      type="password"
+                      placeholder="Confirm new password"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      required
+                      minLength={6}
+                      disabled={loading}
+                    />
+                    <small className="authHint">Must be at least 6 characters</small>
+                  </div>
 
-                <small style={{ color: "var(--muted)", fontSize: "0.8rem", marginTop: -4 }}>
-                  Password must be at least 6 characters long
-                </small>
+                  <button className="authSubmitBtn" type="submit" disabled={loading}>
+                    {loading ? "Resetting..." : "Reset Password"}
+                  </button>
+                </form>
+              )}
 
-                <button className="primary" type="submit" disabled={loading}>
-                  {loading ? "Resetting..." : "Reset Password"}
-                </button>
-              </form>
-            ) : null}
-
-            <div className="authLinksRow">
-              {step > 1 ? (
+              {step > 1 && (
                 <button
                   type="button"
-                  className="ghostBtn"
+                  className="authBackBtn"
                   onClick={() => {
                     setStep((previous) => previous - 1);
                     setError("");
                     setSuccess("");
                   }}
                 >
-                  {"<- Back"}
+                  ← Back
                 </button>
-              ) : (
-                <Link to="/login" className="inlineLink">
-                  {"<- Back to Login"}
-                </Link>
               )}
 
-              <Link to="/signup" className="inlineLink">
-                Create account
+              <p className="authSignUprompt">
+                Remember your password?{" "}
+                <Link to="/login" className="authSignUpLink">
+                  Sign in
+                </Link>
+              </p>
+
+              <Link to="/" className="authBackLink">
+                <span>←</span> Back to home
               </Link>
             </div>
           </div>

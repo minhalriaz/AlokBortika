@@ -2,6 +2,26 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import organizationModel from "../../models/Organization.js";
 
+const getOrganizationStatusMessage = (status) => {
+  if (status === "pending") {
+    return "Your organization is awaiting admin approval.";
+  }
+
+  if (status === "inactive") {
+    return "Your organization account is deactivated. Please contact an administrator.";
+  }
+
+  if (status === "suspended") {
+    return "Your organization account has been suspended. Please contact an administrator.";
+  }
+
+  if (status === "deleted") {
+    return "This organization account has been removed. Please contact an administrator.";
+  }
+
+  return "Your organization account is not active.";
+};
+
 // ========== ORGANIZATION REGISTER ==========
 export const registerOrganization = async (req, res) => {
   try {
@@ -16,6 +36,9 @@ export const registerOrganization = async (req, res) => {
       password,
       description,
       services,
+      website,
+      registrationNumber,
+      establishedYear,
     } = req.body;
 
     if (!name || !type || !contactPerson || !phone || !email || !password) {
@@ -56,28 +79,20 @@ export const registerOrganization = async (req, res) => {
       password: hashedPassword,
       description: description || "",
       services: services || [],
+      website: website || "",
+      registrationNumber: registrationNumber || "",
+      establishedYear: Number.isFinite(Number(establishedYear))
+        ? Number(establishedYear)
+        : null,
       status: "pending", // new orgs start as pending until admin approves
+      selfRegistered: true,
     });
 
     await organization.save();
 
-    const token = jwt.sign(
-      { id: organization._id, type: "organization" },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    res.cookie("orgToken", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
     return res.json({
       success: true,
       message: "Organization registered successfully. Awaiting admin approval.",
-      token,
       organization: {
         id: organization._id,
         name: organization.name,
@@ -90,6 +105,9 @@ export const registerOrganization = async (req, res) => {
         location: organization.location,
         description: organization.description,
         services: organization.services,
+        website: organization.website,
+        registrationNumber: organization.registrationNumber,
+        establishedYear: organization.establishedYear,
       },
     });
   } catch (error) {
@@ -130,6 +148,13 @@ export const loginOrganization = async (req, res) => {
       return res.json({
         success: false,
         message: "Invalid email or password",
+      });
+    }
+
+    if (organization.status !== "active") {
+      return res.json({
+        success: false,
+        message: getOrganizationStatusMessage(organization.status),
       });
     }
 

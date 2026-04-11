@@ -66,8 +66,8 @@ const organizationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "inactive", "pending"],
-      default: "active",
+      enum: ["pending", "active", "inactive", "suspended", "deleted"],
+      default: "pending",
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

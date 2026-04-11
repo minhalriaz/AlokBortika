@@ -2,11 +2,62 @@ import Opportunity from "../../models/Opportunity.js";
 import User from "../../models/user.js";
 import cloudinary from "../../config/cloudinary.js";
 
+const getRequestUserId = (req) => req.userId || req.body?.userId || req.user?.id || null;
+
+const parseBoolean = (value, fallback = false) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    if (value.toLowerCase() === "true") return true;
+    if (value.toLowerCase() === "false") return false;
+  }
+  return fallback;
+};
+
+const parseListField = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value !== "string") {
+    return [];
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => String(item).trim()).filter(Boolean);
+    }
+  } catch (_error) {}
+
+  return trimmed
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const resolveStatus = ({ status, isActive }, fallback = "active") => {
+  if (typeof status === "string" && status.trim()) {
+    return status;
+  }
+
+  if (typeof isActive !== "undefined") {
+    return parseBoolean(isActive, true) ? "active" : "inactive";
+  }
+
+  return fallback;
+};
+
 // Get all opportunities
 export const getAllOpportunities = async (req, res) => {
   try {
     const { limit = 100, status = "active" } = req.query;
-    const opportunities = await Opportunity.find({ status })
+    const query = status === "all" ? {} : { status };
+    const opportunities = await Opportunity.find(query)
       .populate("createdBy", "name email")
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
@@ -54,7 +105,7 @@ export const getOpportunityById = async (req, res) => {
 // Create opportunity (admin only)
 export const createOpportunity = async (req, res) => {
   try {
-    const userId = req.body.userId;
+    const userId = getRequestUserId(req);
     const user = await User.findById(userId);
 
     if (!user || user.role !== "admin") {
@@ -73,8 +124,12 @@ export const createOpportunity = async (req, res) => {
       duration,
       spots,
       themeColor,
+      color,
       requirements,
       benefits,
+      status,
+      isActive,
+      isFeatured,
     } = req.body;
 
     let imageUrl = null;
@@ -101,15 +156,13 @@ export const createOpportunity = async (req, res) => {
       location,
       duration,
       spots,
-      themeColor,
-      requirements: Array.isArray(requirements)
-        ? requirements
-        : requirements?.split("\n").filter(Boolean) || [],
-      benefits: Array.isArray(benefits)
-        ? benefits
-        : benefits?.split("\n").filter(Boolean) || [],
+      themeColor: color || themeColor || "#266d5e",
+      requirements: parseListField(requirements),
+      benefits: parseListField(benefits),
       image: imageUrl,
       imageUrl: imageUrl,
+      status: resolveStatus({ status, isActive }),
+      isFeatured: parseBoolean(isFeatured, false),
       createdBy: userId,
     });
 
@@ -131,7 +184,7 @@ export const createOpportunity = async (req, res) => {
 // Update opportunity (admin only)
 export const updateOpportunity = async (req, res) => {
   try {
-    const userId = req.body.userId;
+    const userId = getRequestUserId(req);
     const { id } = req.params;
 
     const user = await User.findById(userId);
@@ -151,9 +204,12 @@ export const updateOpportunity = async (req, res) => {
       duration,
       spots,
       themeColor,
+      color,
       requirements,
       benefits,
       status,
+      isActive,
+      isFeatured,
     } = req.body;
 
     // Get existing opportunity to preserve image if not updating it
@@ -184,16 +240,21 @@ export const updateOpportunity = async (req, res) => {
         location,
         duration,
         spots,
-        themeColor,
-        requirements: Array.isArray(requirements)
-          ? requirements
-          : requirements?.split("\n").filter(Boolean) || [],
-        benefits: Array.isArray(benefits)
-          ? benefits
-          : benefits?.split("\n").filter(Boolean) || [],
+        themeColor: color || themeColor || existingOpportunity?.themeColor || "#266d5e",
+        requirements: parseListField(requirements),
+        benefits: parseListField(benefits),
         image: imageUrl,
         imageUrl: imageUrl,
-        status,
+        status: resolveStatus(
+          { status, isActive },
+          existingOpportunity?.status || "active"
+        ),
+        isFeatured: parseBoolean(
+          typeof isFeatured === "undefined"
+            ? existingOpportunity?.isFeatured
+            : isFeatured,
+          false
+        ),
       },
       { new: true }
     );
@@ -221,7 +282,7 @@ export const updateOpportunity = async (req, res) => {
 // Delete opportunity (admin only)
 export const deleteOpportunity = async (req, res) => {
   try {
-    const userId = req.body.userId;
+    const userId = getRequestUserId(req);
     const { id } = req.params;
 
     const user = await User.findById(userId);

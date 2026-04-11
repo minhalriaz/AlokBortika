@@ -7,12 +7,21 @@ import api from "../../api/api";
 const EMPTY_FILTERS = { search: "", role: "all", status: "all" };
 
 const badgeClass = (value, map) => map[value] || "bg-slate-100 text-slate-700";
+const EMPTY_COUNTS = { total: 0, admins: 0, volunteers: 0, active: 0, suspended: 0 };
+
+const assertSuccess = (response, fallbackMessage) => {
+  if (response.data?.success === false) {
+    throw new Error(response.data.message || fallbackMessage);
+  }
+
+  return response.data;
+};
 
 export default function AdminUsers() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [users, setUsers] = useState([]);
-  const [counts, setCounts] = useState({ total: 0, admins: 0, volunteers: 0, active: 0, suspended: 0 });
+  const [counts, setCounts] = useState(EMPTY_COUNTS);
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState("");
@@ -22,20 +31,26 @@ export default function AdminUsers() {
     try {
       setLoading(true);
       const res = await api.get("/admin/users", { params: filters });
-      setUsers(res.data.users || []);
-      setCounts(res.data.counts || { total: 0, admins: 0, volunteers: 0, active: 0, suspended: 0 });
+      const data = assertSuccess(res, "Failed to fetch users");
+      setUsers(data.users || []);
+      setCounts(data.counts || EMPTY_COUNTS);
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to fetch users");
+      setUsers([]);
+      setCounts(EMPTY_COUNTS);
+      toast.error(error?.response?.data?.message || error?.message || "Failed to fetch users");
     } finally {
       setLoading(false);
     }
   }, [filters]);
 
-  const fetchOrganizations = useCallback(async () => {
+const fetchOrganizations = useCallback(async () => {
     try {
-      const res = await api.get("/admin/user-options/organizations");
-      setOrganizations(res.data.organizations || []);
-    } catch (_error) {}
+      const res = await api.get("/admin/organization-options");
+      const data = assertSuccess(res, "Failed to fetch organizations");
+      setOrganizations(data.organizations || []);
+    } catch (_error) {
+      setOrganizations([]);
+    }
   }, []);
 
   useEffect(() => {
@@ -58,11 +73,12 @@ export default function AdminUsers() {
     try {
       setSavingId(userId);
       const res = await api.patch(`/admin/users/${userId}`, payload);
-      const updated = res.data.user;
+      const data = assertSuccess(res, "Failed to update user");
+      const updated = data.user;
       setUsers((prev) => prev.map((item) => (item._id === userId ? updated : item)));
-      toast.success(res.data.message || "User updated");
+      toast.success(data.message || "User updated");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to update user");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update user");
     } finally {
       setSavingId("");
       fetchUsers();
@@ -76,11 +92,12 @@ export default function AdminUsers() {
     try {
       setDeletingId(userId);
       const res = await api.delete(`/admin/users/${userId}`);
-      toast.success(res.data.message || "User deleted");
+      const data = assertSuccess(res, "Failed to delete user");
+      toast.success(data.message || "User deleted");
       setUsers((prev) => prev.filter((item) => item._id !== userId));
       fetchUsers();
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to delete user");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to delete user");
     } finally {
       setDeletingId("");
     }

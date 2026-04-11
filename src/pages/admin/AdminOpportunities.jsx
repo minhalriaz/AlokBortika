@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 import {
   Plus,
   Pencil,
@@ -52,6 +53,13 @@ function classNames(...classes) {
 }
 
 function normalizeOpportunity(item) {
+  const isActive =
+    typeof item.isActive === "boolean"
+      ? item.isActive
+      : typeof item.status === "string"
+      ? item.status === "active"
+      : true;
+
   return {
     id: item.id || item._id,
     title: item.title || "",
@@ -64,8 +72,8 @@ function normalizeOpportunity(item) {
     spotsRemaining: Number(
       item.spotsRemaining ?? item.remainingSpots ?? item.availableSpots ?? item.spots ?? 0
     ),
-    color: item.color || "#3d8b7a",
-    isActive: Boolean(item.isActive ?? true),
+    color: item.color || item.themeColor || "#3d8b7a",
+    isActive,
     isFeatured: Boolean(item.isFeatured ?? false),
     requirements: Array.isArray(item.requirements)
       ? item.requirements.join("\n")
@@ -132,7 +140,7 @@ function EmptyState({ onAdd }) {
 function DeleteConfirmModal({ open, item, onClose, onConfirm, deleting }) {
   if (!open || !item) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-start justify-between">
@@ -173,7 +181,8 @@ function DeleteConfirmModal({ open, item, onClose, onConfirm, deleting }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -263,7 +272,7 @@ function OpportunityModal({
     }
   };
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/50 p-4 backdrop-blur-sm">
       <div className="mx-auto my-6 w-full max-w-5xl rounded-[28px] bg-white shadow-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-[28px] border-b border-slate-200 bg-white/95 px-6 py-5 backdrop-blur">
@@ -515,7 +524,8 @@ function OpportunityModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -533,18 +543,6 @@ const inputClass =
 
 export default function AdminOpportunities() {
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState(null);
-
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    if (!user || user.role !== "admin") {
-      toast.error("Access denied");
-      navigate("/login"); // or dashboard
-    } else {
-      setCurrentUser(user);
-    }
-  }, [navigate]);
 
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -575,7 +573,12 @@ export default function AdminOpportunities() {
   const fetchOpportunities = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/opportunities?limit=100");
+      const res = await api.get("/opportunities", {
+        params: { limit: 100, status: "all" },
+      });
+      if (res.data?.success === false) {
+        throw new Error(res.data.message || "Failed to load opportunities.");
+      }
 
       const items = Array.isArray(res.data)
         ? res.data
@@ -588,7 +591,7 @@ export default function AdminOpportunities() {
       setOpportunities(items.map(normalizeOpportunity));
     } catch (error) {
       toast.error(
-        error?.response?.data?.message || "Failed to load opportunities."
+        error?.response?.data?.message || error?.message || "Failed to load opportunities."
       );
       setOpportunities([]);
     } finally {
@@ -663,11 +666,6 @@ export default function AdminOpportunities() {
     data.append("benefits", JSON.stringify(parseListField(form.benefits)));
     data.append("isActive", String(form.isActive));
     data.append("isFeatured", String(form.isFeatured));
-    
-    // Add userId from current user (supports both _id and id keys)
-    if (currentUser && (currentUser._id || currentUser.id)) {
-      data.append("userId", currentUser._id || currentUser.id);
-    }
 
     if (form.image) {
       data.append("image", form.image);
@@ -690,14 +688,20 @@ export default function AdminOpportunities() {
       const payload = buildFormData();
 
       if (modalMode === "create") {
-        await api.post("/opportunities", payload, {
+        const res = await api.post("/opportunities", payload, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        if (res.data?.success === false) {
+          throw new Error(res.data.message || "Failed to create opportunity.");
+        }
         toast.success("Opportunity created successfully.");
       } else {
-        await api.put(`/opportunities/${editingId}`, payload, {
+        const res = await api.put(`/opportunities/${editingId}`, payload, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        if (res.data?.success === false) {
+          throw new Error(res.data.message || "Failed to update opportunity.");
+        }
         toast.success("Opportunity updated successfully.");
       }
 
@@ -706,6 +710,7 @@ export default function AdminOpportunities() {
     } catch (error) {
       toast.error(
         error?.response?.data?.message ||
+          error?.message ||
           `Failed to ${modalMode === "create" ? "create" : "update"} opportunity.`
       );
     } finally {
@@ -718,12 +723,15 @@ export default function AdminOpportunities() {
 
     try {
       setDeleting(true);
-      await api.delete(`/opportunities/${deleteTarget.id}`);
+      const res = await api.delete(`/opportunities/${deleteTarget.id}`);
+      if (res.data?.success === false) {
+        throw new Error(res.data.message || "Failed to delete opportunity.");
+      }
       toast.success("Opportunity deleted.");
       setDeleteTarget(null);
       fetchOpportunities();
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to delete opportunity.");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to delete opportunity.");
     } finally {
       setDeleting(false);
     }
@@ -746,20 +754,19 @@ export default function AdminOpportunities() {
       payload.append("benefits", JSON.stringify(parseListField(item.benefits || "")));
       payload.append("isActive", String(!item.isActive));
       payload.append("isFeatured", String(item.isFeatured));
-      if (currentUser && (currentUser._id || currentUser.id)) {
-        payload.append("userId", currentUser._id || currentUser.id);
-      }
-
-      await api.put(`/opportunities/${item.id}`, payload, {
+      const res = await api.put(`/opportunities/${item.id}`, payload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      if (res.data?.success === false) {
+        throw new Error(res.data.message || "Failed to update opportunity status.");
+      }
 
       toast.success(
         `Opportunity ${item.isActive ? "deactivated" : "activated"} successfully.`
       );
       fetchOpportunities();
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to update status.");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update status.");
     } finally {
       setTogglingId(null);
     }
