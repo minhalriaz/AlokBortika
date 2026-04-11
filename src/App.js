@@ -21,6 +21,52 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import OrgProtectedRoute from "./components/OrgProtectedRoute";
 import { Toaster } from "react-hot-toast";
 import AdminProblems from "./pages/admin/AdminProblems";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import "./pages/HomePieCharts.css";
+
+const RADIAN = Math.PI / 180;
+
+const STATUS_DATA = [
+  { name: "Pending", value: 20, color: "#ef4444" },
+  { name: "In Progress", value: 10, color: "#f59e0b" },
+  { name: "Resolved", value: 70, color: "#22c55e" },
+];
+
+const CATEGORY_DATA = [
+  { name: "Road Damage", value: 28 },
+  { name: "Waste Management", value: 22 },
+  { name: "Lighting Issues", value: 18 },
+  { name: "Water Supply", value: 15 },
+  { name: "Safety Issues", value: 17 },
+];
+
+const RESOLUTION_RATE_DATA = [
+  { name: "Solved", value: 70, color: "#22c55e" },
+  { name: "Unsolved", value: 30, color: "#ef4444" },
+];
+
+const CATEGORY_COLORS = ["#2563eb", "#0891b2", "#7c3aed", "#0ea5e9", "#14b8a6"];
+
+function piePercentLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.54;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#ffffff"
+      textAnchor={x > cx ? "start" : "end"}
+      dominantBaseline="central"
+      fontSize={12}
+      fontWeight={700}
+    >
+      {`${Math.round(percent * 100)}%`}
+    </text>
+  );
+}
+
 function Landing({ theme, toggleTheme }) {
   const slides = [
     {
@@ -120,6 +166,7 @@ function Landing({ theme, toggleTheme }) {
   ];
 
   const [homeBgIndex, setHomeBgIndex] = useState(0);
+  const resolvedRate = STATUS_DATA.find((item) => item.name === "Resolved")?.value || 0;
 
   useEffect(() => {
     const regionTimer = setInterval(() => {
@@ -310,6 +357,115 @@ function Landing({ theme, toggleTheme }) {
             organizations ready to help. Our mission is to make issue reporting simple,
             transparent, and collaborative so solutions can happen faster.
           </p>
+        </div>
+      </section>
+
+      <section id="community-overview" className="section">
+        <div className="sectionHead">
+          <h2>Community Problem Overview</h2>
+          <p>Live distribution of reported issues and progress.</p>
+        </div>
+
+        <div className="homePieGrid">
+          <article className="homePieCard homePieCardMain">
+            <h3>Problem Status Distribution</h3>
+            <div className="homePieWrap">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={STATUS_DATA}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={58}
+                    outerRadius={108}
+                    label={piePercentLabel}
+                    labelLine={false}
+                    isAnimationActive
+                    animationDuration={1000}
+                  >
+                    {STATUS_DATA.map((item) => (
+                      <Cell key={item.name} fill={item.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value}%`, "Share"]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="homePieInsight">{resolvedRate}% problems are resolved.</p>
+            <ul className="homePieLegend">
+              {STATUS_DATA.map((item) => (
+                <li key={item.name}>
+                  <span style={{ backgroundColor: item.color }} />
+                  {item.name}
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <article className="homePieCard">
+            <h3>Problem Category Distribution</h3>
+            <div className="homePieWrap homePieWrapSmall">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={CATEGORY_DATA}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={102}
+                    label={piePercentLabel}
+                    labelLine={false}
+                    isAnimationActive
+                    animationDuration={900}
+                  >
+                    {CATEGORY_DATA.map((item, index) => (
+                      <Cell key={item.name} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value}%`, "Share"]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="homePieNote">
+              This chart shows which problem types are reported most often, helping the community
+              prioritize resources where they are needed most.
+            </p>
+          </article>
+
+          <article className="homePieCard">
+            <h3>Issue Resolution Rate</h3>
+            <div className="homePieWrap homePieWrapSmall">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={RESOLUTION_RATE_DATA}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={54}
+                    outerRadius={102}
+                    label={piePercentLabel}
+                    labelLine={false}
+                    isAnimationActive
+                    animationDuration={900}
+                  >
+                    {RESOLUTION_RATE_DATA.map((item) => (
+                      <Cell key={item.name} fill={item.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value}%`, "Share"]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="homePieNote">
+              This chart compares solved and unsolved issues to indicate overall community
+              effectiveness and where more support is required.
+            </p>
+          </article>
         </div>
       </section>
 
