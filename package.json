@@ -20,6 +20,7 @@
     "multer": "^2.1.1",
     "nodemailer": "^8.0.2",
     "react": "^18.2.0",
+    "react-carbon-footprint": "^1.0.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.6.0",
     "react-player": "^3.4.0",
