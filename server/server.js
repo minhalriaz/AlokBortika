@@ -8,7 +8,6 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
-
 import authRoutes from "./src/routes/authRoutes.js";
 import volunteerRoutes from "./src/routes/volunteerRoutes.js";
 import organizationRoutes from "./src/routes/organizationRoutes.js";
@@ -17,6 +16,7 @@ import problemRouter from "./src/modules/problem/problem.routes.js";
 import opportunityRouter from "./src/modules/opportunity/opportunity.routes.js";
 import donationRouter from "./src/modules/donation/donation.routes.js";
 import { co2 } from "@tgwf/co2";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     credentials: true,
   })
 );

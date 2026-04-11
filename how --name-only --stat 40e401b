@@ -1,0 +1,15 @@
+* [33m40e401b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Added carbon footprint analysis feature
+* [33mf1bd488[m Add three homepage pie charts below About with chart insights
+*   [33mb8778f4[m Add admin problem management with status update and dashboard tab
+[32m|[m[33m\[m  
+[32m|[m * [33m57db4e3[m Remove contact section from landing page
+* [33m|[m [33m288ef01[m Add admin problem management with status update and dashboard tab
+[33m|[m[33m/[m  
+* [33mb2e5d35[m Restrict admin access to single email using ensureAdmin and environment variable
+*   [33md3e151c[m Merge pull request #4 from minhalriaz/feature/organization
+[34m|[m[35m\[m  
+[34m|[m * [33m409f811[m complete organizer dashbord . organizer approval in admin panel and complete the flow
+[34m|[m[34m/[m  
+* [33m9cbbac7[m[33m ([m[1;31morigin/my-backend[m[33m, [m[1;32mmy-backend[m[33m)[m Complete donation payment system with SSLCommerz integration, backend verification, and frontend success handling
+*   [33m3452bf0[m[33m ([m[1;32mmerge-work[m[33m)[m Merge pull request #2 from minhalriaz/feature/organization
+[36m|[m[1;31m\[m  
