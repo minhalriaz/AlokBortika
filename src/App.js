@@ -18,6 +18,7 @@ import AdminOpportunities from "./pages/admin/AdminOpportunities";
 import AdminOrganizations from "./pages/admin/AdminOrganizations";
 import AdminUsers from "./pages/admin/AdminUsers";
 import ProtectedRoute from "./components/ProtectedRoute";
+import OrgProtectedRoute from "./components/OrgProtectedRoute";
 import { Toaster } from "react-hot-toast";
 function Landing({ theme, toggleTheme }) {
   const slides = [
@@ -26,14 +27,14 @@ function Landing({ theme, toggleTheme }) {
       subtitle:
         "See nearby problems and let local volunteers solve them with real-time updates and clear results.",
       image:
-        "https://images.unsplash.com/photo-1487931069458https://img.freepik.com/premium-photo/friends-cleaning-recycling-with-people-beach-sustainability-environment-eco-friendly-climate-change-earth-day-nature-with-volunteer-community-service-pollution-plastic_590464-141559.jpg?w=2000-7cd60335c2ef?auto=format&fit=crop&w=1400&q=80",
+        "https://img.freepik.com/premium-photo/friends-cleaning-recycling-with-people-beach-sustainability-environment-eco-friendly-climate-change-earth-day-nature-with-volunteer-community-service-pollution-plastic_590464-141559.jpg?w=2000",
     },
     {
       title: "Neighbors helping neighbors",
       subtitle:
         "Add a report, support someone in your neighborhood, and watch progress through verified volunteer activity.",
       image:
-        "https://images.unsplash.com/phhttps://pbs.twimg.com/media/D6L0kz1V4AAziFY.jpg:largeoto-1617046136318-5f37dd2f34f2?auto=format&fit=crop&w=1400&q=80",
+        "https://pbs.twimg.com/media/D6L0kz1V4AAziFY.jpg:large",
     },
     {
       title: "Impact that shows up locally",
@@ -187,10 +188,7 @@ function Landing({ theme, toggleTheme }) {
 
         <div className="navActions">
           <Link to="/login">
-            <button className="ghostBtn">Volunteer Login</button>
-          </Link>
-          <Link to="/admin">
-            <button className="ctaBtn">Admin Panel</button>
+            <button className="primary">Login</button>
           </Link>
         </div>
       </header>
@@ -479,7 +477,7 @@ export default function App() {
         <Route path="/donate" element={<Donate />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/volunteer-reviews" element={<VolunteerReviewPage />} />
-        <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
+        <Route path="/organization-dashboard" element={<OrgProtectedRoute><OrganizationDashboard /></OrgProtectedRoute>} />
         <Route path="/organization/login" element={<OrganizationLogin />} />
         <Route path="/organization/register" element={<OrganizationRegister />} />
         <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOpportunities /></ProtectedRoute>} />

@@ -18,6 +18,9 @@ const opportunitySchema = new mongoose.Schema(
         "Education",
         "Healthcare",
         "Environment",
+        "Food Relief",
+        "Elderly Care",
+        "Animal Rescue",
         "Community",
         "Disaster Relief",
         "Tech",
@@ -45,6 +48,10 @@ const opportunitySchema = new mongoose.Schema(
     themeColor: {
       type: String,
       default: "#266d5e",
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
     },
     requirements: {
       type: [String],

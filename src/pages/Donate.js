@@ -104,8 +104,8 @@ const PRESET_AMOUNTS = [100, 500, 1000];
 const PAYMENT_METHODS = [
   {
     id: "card",
-    label: "Card (SSLCommerz)",
-    description: "Securely pay through SSLCommerz gateway.",
+    label: "Card (Stripe)",
+    description: "Securely pay with Visa, MasterCard, or any supported card.",
   },
   {
     id: "bkash",
@@ -184,7 +184,6 @@ function clearPaymentQueryParams() {
   const url = new URL(window.location.href);
   url.searchParams.delete("payment");
   url.searchParams.delete("session_id");
-  url.searchParams.delete("transactionId");
   const nextSearch = url.searchParams.toString();
   window.history.replaceState(
     {},
@@ -318,7 +317,7 @@ export default function Donate() {
 
     const params = new URLSearchParams(window.location.search);
     const paymentStatus = params.get("payment");
-    const transactionId = params.get("transactionId");
+    const sessionId = params.get("session_id");
 
     if (paymentStatus === "cancelled") {
       setErrorMessage("Payment was cancelled. You can try again anytime.");
@@ -326,30 +325,53 @@ export default function Donate() {
       return;
     }
 
-    if (paymentStatus === "failed") {
-      setErrorMessage("Payment failed. Please try again.");
-      clearPaymentQueryParams();
+    if (paymentStatus !== "success" || !sessionId) {
       return;
     }
 
-    if (paymentStatus !== "success") {
-      return;
-    }
+    let shouldIgnore = false;
 
-    setThankYouMessage(
-      "Thank you for supporting your community. Your contribution helps solve real local problems."
-    );
-    setSuccessMessage(
-      transactionId
-        ? `Payment successful. Transaction ID: ${transactionId}`
-        : "Payment successful and donation recorded."
-    );
-    setFormData(INITIAL_FORM);
-    setSelectedAmountType("custom");
-    setErrors({});
-    setPaymentDraft(null);
-    clearPaymentQueryParams();
-  }, []);
+    const verifyPayment = async () => {
+      setIsProcessingPayment(true);
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      try {
+        const response = await donationService.verifyCheckoutSession(sessionId);
+
+        if (shouldIgnore) return;
+
+        if (!response?.success || !response?.donation) {
+          throw new Error(response?.message || "Payment verification failed.");
+        }
+
+        appendDonationToUi(response.donation);
+        setFormData(INITIAL_FORM);
+        setSelectedAmountType("custom");
+        setErrors({});
+        setPaymentDraft(null);
+        setThankYouMessage(
+          "Thank you for supporting your community. Your contribution helps solve real local problems."
+        );
+        setSuccessMessage("Payment successful and donation recorded.");
+      } catch (error) {
+        if (!shouldIgnore) {
+          setErrorMessage(error?.message || "Failed to verify payment.");
+        }
+      } finally {
+        if (!shouldIgnore) {
+          setIsProcessingPayment(false);
+          clearPaymentQueryParams();
+        }
+      }
+    };
+
+    verifyPayment();
+
+    return () => {
+      shouldIgnore = true;
+    };
+  }, [appendDonationToUi]);
 
   const handleInputChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -475,15 +497,14 @@ export default function Donate() {
           isAnonymous: paymentDraft.isAnonymous,
         };
 
-        const checkoutResponse = await donationService.initPayment(checkoutPayload);
-
-        if (!checkoutResponse?.success || !checkoutResponse?.gatewayUrl) {
+        const checkoutResponse = await donationService.createCheckoutSession(checkoutPayload);
+        if (!checkoutResponse?.success || !checkoutResponse?.checkoutUrl) {
           throw new Error(
             checkoutResponse?.message || "Failed to create payment session."
           );
         }
 
-        window.location.href = checkoutResponse.gatewayUrl;
+        window.location.href = checkoutResponse.checkoutUrl;
         return;
       }
 
@@ -709,7 +730,7 @@ export default function Donate() {
           <div className="donate-section-head">
             <h2>Online Donation System</h2>
             <p>
-              Card donations are processed securely with SSLCommerz. Wallet
+              Card donations are processed securely with Stripe Checkout. Wallet
               donations are recorded and kept pending for manual verification.
             </p>
           </div>
@@ -858,7 +879,7 @@ export default function Donate() {
             <h3>Confirm Donation</h3>
             <p>
               {paymentDraft.paymentMethod === "card"
-                ? "You will be redirected to SSLCommerz to complete payment securely."
+                ? "You will be redirected to Stripe Checkout to complete payment securely."
                 : "This donation request will be recorded for wallet payment verification."}
             </p>
 
@@ -903,7 +924,7 @@ export default function Donate() {
                 {isProcessingPayment
                   ? "Processing..."
                   : paymentDraft.paymentMethod === "card"
-                  ? "Continue to SSLCommerz"
+                  ? "Continue to Stripe"
                   : "Confirm Donation"}
               </button>
             </div>

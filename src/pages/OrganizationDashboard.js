@@ -58,6 +58,15 @@ export default function OrganizationDashboard() {
 
   const getOrgToken = useCallback(() => localStorage.getItem("orgToken") || "", []);
   const orgHeaders = useCallback(() => ({ headers: { "org-authorization": "Bearer " + getOrgToken() } }), [getOrgToken]);
+  const clearOrganizationSession = useCallback((message = "") => {
+    localStorage.removeItem("orgToken");
+    localStorage.removeItem("organization");
+    if (message) {
+      localStorage.setItem("organizationAuthError", message);
+    } else {
+      localStorage.removeItem("organizationAuthError");
+    }
+  }, []);
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -74,24 +83,31 @@ export default function OrganizationDashboard() {
           focusArea: (org.focusArea || []).join(", "),
         });
       } else {
+        clearOrganizationSession(res.data.message || "");
         navigate("/organization/login");
       }
-    } catch {
+    } catch (error) {
+      clearOrganizationSession(error?.response?.data?.message || "");
       navigate("/organization/login");
     } finally {
       setLoading(false);
     }
-  }, [navigate, orgHeaders]);
+  }, [clearOrganizationSession, navigate, orgHeaders]);
 
   useEffect(() => {
-    if (!localStorage.getItem("organization")) { navigate("/organization/login"); return; }
+    if (!localStorage.getItem("organization") || !localStorage.getItem("orgToken")) {
+      clearOrganizationSession();
+      navigate("/organization/login");
+      return;
+    }
     fetchDashboard();
-  }, [fetchDashboard, navigate]);
+  }, [clearOrganizationSession, fetchDashboard, navigate]);
 
   const handleLogout = async () => {
     try { await api.post("/organization/logout"); } catch {}
     localStorage.removeItem("orgToken");
     localStorage.removeItem("organization");
+    localStorage.removeItem("organizationAuthError");
     navigate("/organization/login");
   };
 

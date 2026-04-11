@@ -19,10 +19,18 @@ api.interceptors.request.use((config) => {
   const isOrganizationRequest =
     typeof config.url === "string" && config.url.startsWith("/organization");
 
-  if (isOrganizationRequest && orgToken) {
-    config.headers["org-authorization"] = `Bearer ${orgToken}`;
-  } else if (userToken) {
-    config.headers.Authorization = `Bearer ${userToken}`;
+  if (isOrganizationRequest) {
+    // Org routes: only send org-authorization, never the user token
+    if (orgToken) {
+      config.headers["org-authorization"] = `Bearer ${orgToken}`;
+    }
+    delete config.headers.Authorization;
+  } else {
+    // All other routes: only send user token
+    if (userToken) {
+      config.headers.Authorization = `Bearer ${userToken}`;
+    }
+    delete config.headers["org-authorization"];
   }
 
   return config;

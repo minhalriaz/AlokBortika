@@ -7,11 +7,11 @@ export default function Signup() {
   const navigate = useNavigate();
   const { register } = useAuth();
 
+  const [signupType, setSignupType] = useState("volunteer");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    role: "volunteer",
   });
 
   const [error, setError] = useState("");
@@ -25,12 +25,6 @@ export default function Signup() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
-
-    if (formData.role === "organization") {
-      navigate("/organization/register", { replace: true });
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -43,11 +37,13 @@ export default function Signup() {
           navigate("/volunteer-dashboard", { replace: true });
         } else if (user?.role === "admin") {
           navigate("/admin", { replace: true });
+        } else if (user?.role === "organization") {
+          navigate("/organization-dashboard", { replace: true });
         } else {
           navigate("/", { replace: true });
         }
       } else {
-        setError(result.message || "Signup failed. Please try again.");
+        setError(result.message || "Registration failed. Please try again.");
       }
     } catch (_error) {
       setError("An unexpected error occurred. Please try again.");
@@ -56,120 +52,150 @@ export default function Signup() {
     }
   };
 
+  const signupTypes = [
+    { value: "volunteer", label: "Volunteer", icon: "👤", desc: "Join as a volunteer" },
+    { value: "organization", label: "Organization", icon: "🏢", desc: "Register your organization" },
+  ];
+
   return (
     <div className="page">
-      <div className="bgGlow bgGlow1" />
-      <div className="bgGlow bgGlow2" />
-
-      <div className="hero">
-        <div className="heroInner authShell">
-          <div className="badge">Join AlokBortika</div>
-          <h1 className="title">Sign up</h1>
-          <p className="subtitle">Create an admin, organizer, or volunteer account.</p>
-
-          <div className="card authCard" style={{ maxWidth: 520 }}>
-            {error ? <p className="messageError">{error}</p> : null}
-
-            <form className="authForm" onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
-              <label>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Account type</div>
-                <select
-                  className="input"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  disabled={loading}
-                >
-                  <option value="volunteer">Volunteer</option>
-                  <option value="admin">Admin</option>
-                  <option value="organization">Organizer / Organization</option>
-                </select>
-              </label>
-
-              {formData.role === "organization" ? (
-                <div
-                  style={{
-                    border: "1px solid var(--border)",
-                    borderRadius: 14,
-                    padding: 16,
-                    background: "rgba(15,118,110,0.05)",
-                  }}
-                >
-                  <div style={{ fontWeight: 700, marginBottom: 8 }}>Organization registration has its own form.</div>
-                  <div style={{ color: "var(--muted)", marginBottom: 12 }}>
-                    Continue to the organizer registration page to submit your organization details.
+      <div className="authPage">
+        <div className="authWrapper">
+          <div className="authCardNew">
+            <div className="authCardLeftNew signupLeft">
+              <div className="authCardLeftContentNew">
+                <Link to="/" className="authLogoNew">
+                  AlokBortika
+                </Link>
+                <h1>Join Our Community</h1>
+                <p>Create an account to start reporting and solving local problems together.</p>
+                
+                <div className="authBenefitsNew">
+                  <div className="authBenefitNew">
+                    <span className="authBenefitIconNew">✓</span>
+                    <span>Submit community problems</span>
                   </div>
-                  <Link to="/organization/register" className="primary" style={{ display: "inline-block", textDecoration: "none" }}>
-                    Open Organization Registration
-                  </Link>
+                  <div className="authBenefitNew">
+                    <span className="authBenefitIconNew">✓</span>
+                    <span>Connect with volunteers</span>
+                  </div>
+                  <div className="authBenefitNew">
+                    <span className="authBenefitIconNew">✓</span>
+                    <span>Track progress together</span>
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <label>
-                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Full name</div>
-                    <input
-                      className="input"
-                      type="text"
-                      name="name"
-                      placeholder="Your name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                      disabled={loading}
-                    />
-                  </label>
 
-                  <label>
-                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Email</div>
-                    <input
-                      className="input"
-                      type="email"
-                      name="email"
-                      placeholder="you@example.com"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      disabled={loading}
-                    />
-                  </label>
+                <div className="authCardFooterNew">
+                  <span>Already have an account?</span>
+                  <Link to="/login" className="authFooterLinkNew">Sign in</Link>
+                </div>
+              </div>
+            </div>
 
-                  <label>
-                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Password</div>
-                    <input
-                      className="input"
-                      type="password"
-                      name="password"
-                      placeholder="Create a password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                      disabled={loading}
-                      minLength={6}
-                    />
-                    <small style={{ color: "var(--muted)", fontSize: "0.8rem", marginTop: 4 }}>
-                      Password must be at least 6 characters long
-                    </small>
-                  </label>
+            <div className="authCardRightNew">
+              <div className="authFormWrapperNew">
+                <div className="authFormHeaderNew">
+                  <h2>Create Account</h2>
+                  <p>Choose your account type</p>
+                </div>
 
-                  <button className="primary" type="submit" disabled={loading}>
-                    {loading ? "Creating account..." : `Create ${formData.role} account`}
-                  </button>
-                </>
-              )}
+                <div className="signupTypeGridNew">
+                  {signupTypes.map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      className={`signupTypeCardNew ${signupType === type.value ? "active" : ""}`}
+                      onClick={() => {
+                        setSignupType(type.value);
+                        setError("");
+                      }}
+                    >
+                      <span className="signupTypeIconNew">{type.icon}</span>
+                      <div className="signupTypeInfoNew">
+                        <span className="signupTypeLabelNew">{type.label}</span>
+                        <span className="signupTypeDescNew">{type.desc}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
 
-              <div className="authMeta">
-                Already have an account? {" "}
-                <Link to="/login" className="inlineLink">
-                  Login
+                {signupType === "organization" && (
+                  <div className="orgRedirectNew">
+                    <p>Organization registration has a separate form with more details.</p>
+                    <Link to="/organization/register" className="orgRedirectBtnNew">
+                      Go to Organization Registration →
+                    </Link>
+                  </div>
+                )}
+
+                {signupType === "volunteer" && (
+                  <>
+                    {error && <div className="authErrorNew">{error}</div>}
+
+                    <form className="authFormNew" onSubmit={handleSubmit}>
+                      <div className="formGroupNew">
+                        <label htmlFor="name">Full Name</label>
+                        <input
+                          id="name"
+                          className="authInputNew"
+                          type="text"
+                          name="name"
+                          placeholder="Your full name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          required
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <div className="formGroupNew">
+                        <label htmlFor="email">Email Address</label>
+                        <input
+                          id="email"
+                          className="authInputNew"
+                          type="email"
+                          name="email"
+                          placeholder="you@example.com"
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <div className="formGroupNew">
+                        <label htmlFor="password">Password</label>
+                        <input
+                          id="password"
+                          className="authInputNew"
+                          type="password"
+                          name="password"
+                          placeholder="••••••••"
+                          value={formData.password}
+                          onChange={handleChange}
+                          required
+                          disabled={loading}
+                          minLength={6}
+                        />
+                        <small className="authHintNew">Must be at least 6 characters</small>
+                      </div>
+
+                      <button
+                        className="authSubmitBtnNew"
+                        type="submit"
+                        disabled={loading}
+                      >
+                        {loading ? "Creating account..." : "Create Account"}
+                      </button>
+                    </form>
+                  </>
+                )}
+
+                <Link to="/" className="authBackLinkNew">
+                  <span>←</span> Back to home
                 </Link>
               </div>
-
-              <div style={{ marginTop: 6 }}>
-                <Link to="/" className="inlineLink">
-                  {"<- Back to home"}
-                </Link>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>

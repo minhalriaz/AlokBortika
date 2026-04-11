@@ -1,16 +1,17 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import api from "../api/api";
 import "../App.css";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
 
+  const [loginType, setLoginType] = useState("volunteer");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    accountType: "volunteer",
   });
 
   const [error, setError] = useState("");
@@ -24,38 +25,61 @@ export default function Login() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
-
-    if (formData.accountType === "organization") {
-      navigate("/organization/login", { replace: true });
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const result = await login({
-        email: formData.email,
-        password: formData.password,
-      });
+      if (loginType === "volunteer" || loginType === "admin") {
+        const result = await login({
+          email: formData.email,
+          password: formData.password,
+        });
 
-      if (!result.success) {
-        setError(result.message || "Login failed. Please check your credentials.");
-        return;
-      }
+        if (!result.success) {
+          setError(result.message || "Invalid email or password.");
+          setLoading(false);
+          return;
+        }
 
-      const user = result.user;
+        const user = result.user;
 
-      if (formData.accountType !== user?.role) {
-        setError(`This account is registered as ${user?.role || "another role"}. Please choose the correct login type.`);
-        return;
-      }
+        if (loginType === "admin" && user?.role !== "admin") {
+          await logout();
+          setError("This page is for admin accounts only.");
+          setLoading(false);
+          return;
+        }
 
-      if (user?.role === "volunteer") {
-        navigate("/volunteer-dashboard", { replace: true });
-      } else if (user?.role === "admin") {
-        navigate("/admin", { replace: true });
-      } else {
-        navigate("/", { replace: true });
+        if (user?.role === "admin") {
+          navigate("/admin", { replace: true });
+        } else if (user?.role === "volunteer") {
+          navigate("/volunteer-dashboard", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
+      } else if (loginType === "organization") {
+        const res = await api.post("/organization/login", formData);
+
+        if (res.data.success) {
+          const org = res.data.organization;
+
+          if (org.status === "pending") {
+            localStorage.removeItem("orgToken");
+            localStorage.removeItem("organization");
+            setError("Your organization is awaiting admin approval. You will be notified once approved.");
+            setLoading(false);
+            return;
+          }
+
+          if (res.data.token) localStorage.setItem("orgToken", res.data.token);
+          localStorage.setItem("organization", JSON.stringify(org));
+          localStorage.removeItem("organizationAuthError");
+
+          navigate("/organization-dashboard", { replace: true });
+        } else {
+          localStorage.removeItem("orgToken");
+          localStorage.removeItem("organization");
+          setError(res.data.message || "Invalid email or password.");
+        }
       }
     } catch (_error) {
       setError("An unexpected error occurred. Please try again.");
@@ -64,119 +88,139 @@ export default function Login() {
     }
   };
 
+  const loginTypes = [
+    { value: "volunteer", label: "Volunteer", icon: "👤" },
+    { value: "organization", label: "Organization", icon: "🏢" },
+    { value: "admin", label: "Admin", icon: "⚙️" },
+  ];
+
   return (
     <div className="page">
-      <div className="bgGlow bgGlow1" />
-      <div className="bgGlow bgGlow2" />
-
-      <div className="hero">
-        <div className="heroInner authShell">
-          <div className="badge">Welcome Back</div>
-          <h1 className="title">Login</h1>
-          <p className="subtitle">Sign in as an admin, organizer, or volunteer.</p>
-
-          <div className="card authCard" style={{ maxWidth: 520 }}>
-            {error ? <p className="messageError">{error}</p> : null}
-
-            <form className="authForm" onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
-              <label>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Login type</div>
-                <select
-                  className="input"
-                  name="accountType"
-                  value={formData.accountType}
-                  onChange={handleChange}
-                  disabled={loading}
-                >
-                  <option value="volunteer">Volunteer</option>
-                  <option value="admin">Admin</option>
-                  <option value="organization">Organizer / Organization</option>
-                </select>
-              </label>
-
-              {formData.accountType === "organization" ? (
-                <div
-                  style={{
-                    border: "1px solid var(--border)",
-                    borderRadius: 14,
-                    padding: 16,
-                    background: "rgba(15,118,110,0.05)",
-                  }}
-                >
-                  <div style={{ fontWeight: 700, marginBottom: 8 }}>Organization accounts use a separate portal.</div>
-                  <div style={{ color: "var(--muted)", marginBottom: 12 }}>
-                    Use the organization login page to access the organizer dashboard.
+      <div className="authPage">
+        <div className="authWrapper">
+          <div className="authCardNew">
+            <div className="authCardLeftNew">
+              <div className="authCardLeftContentNew">
+                <Link to="/" className="authLogoNew">
+                  AlokBortika
+                </Link>
+                <h1>Welcome Back</h1>
+                <p>Sign in to continue making a difference in your community.</p>
+                
+                <div className="authBenefitsNew">
+                  <div className="authBenefitNew">
+                    <span className="authBenefitIconNew">✓</span>
+                    <span>Track your submitted reports</span>
                   </div>
-                  <Link to="/organization/login" className="primary" style={{ display: "inline-block", textDecoration: "none" }}>
-                    Go to Organization Login
-                  </Link>
+                  <div className="authBenefitNew">
+                    <span className="authBenefitIconNew">✓</span>
+                    <span>Connect with local volunteers</span>
+                  </div>
+                  <div className="authBenefitNew">
+                    <span className="authBenefitIconNew">✓</span>
+                    <span>See community impact</span>
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <label>
-                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Email</div>
+
+                <div className="authCardFooterNew">
+                  <span>Join our community</span>
+                  <Link to="/signup" className="authFooterLinkNew">Sign up</Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="authCardRightNew">
+              <div className="authFormWrapperNew">
+                <div className="authFormHeaderNew">
+                  <h2>Sign In</h2>
+                  <p>Select your account type</p>
+                </div>
+
+                <div className="loginTypeGridNew">
+                  {loginTypes.map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      className={`loginTypeCardNew ${loginType === type.value ? "active" : ""}`}
+                      onClick={() => {
+                        setLoginType(type.value);
+                        setError("");
+                      }}
+                    >
+                      <span className="loginTypeIconNew">{type.icon}</span>
+                      <span className="loginTypeLabelNew">{type.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {error && <div className="authErrorNew">{error}</div>}
+
+                <form className="authFormNew" onSubmit={handleSubmit}>
+                  <div className="formGroupNew">
+                    <label htmlFor="email">
+                      {loginType === "organization" ? "Organization Email" : "Email Address"}
+                    </label>
                     <input
-                      className="input"
+                      id="email"
+                      className="authInputNew"
                       type="email"
                       name="email"
-                      placeholder="you@example.com"
+                      placeholder={loginType === "organization" ? "org@example.com" : "you@example.com"}
                       value={formData.email}
                       onChange={handleChange}
                       required
                       disabled={loading}
                     />
-                  </label>
+                  </div>
 
-                  <label>
-                    <div style={{ fontWeight: 700, marginBottom: 6 }}>Password</div>
+                  <div className="formGroupNew">
+                    <div className="formLabelRowNew">
+                      <label htmlFor="password">Password</label>
+                      {loginType === "volunteer" && (
+                        <Link to="/forgot-password" className="authForgotLinkNew">
+                          Forgot password?
+                        </Link>
+                      )}
+                    </div>
                     <input
-                      className="input"
+                      id="password"
+                      className="authInputNew"
                       type="password"
                       name="password"
-                      placeholder="Enter your password"
+                      placeholder="••••••••"
                       value={formData.password}
                       onChange={handleChange}
                       required
                       disabled={loading}
                     />
-                  </label>
-
-                  <div style={{ textAlign: "right", marginBottom: "0.5rem" }}>
-                    <Link
-                      to="/forgot-password"
-                      className="inlineLink"
-                      style={{ fontSize: "0.9rem" }}
-                    >
-                      Forgot password?
-                    </Link>
                   </div>
 
-                  <button className="primary" type="submit" disabled={loading}>
-                    {loading ? "Logging in..." : `Login as ${formData.accountType}`}
+                  <button
+                    className="authSubmitBtnNew"
+                    type="submit"
+                    disabled={loading}
+                  >
+                    {loading ? "Signing in..." : `Sign in as ${loginType}`}
                   </button>
-                </>
-              )}
+                </form>
 
-              <div className="authMeta">
-                Need a volunteer or admin account? {" "}
-                <Link to="/signup" className="inlineLink">
-                  Sign up
+                <div className="authFormFooterNew">
+                  {loginType === "volunteer" ? (
+                    <>
+                      Don't have an account? <Link to="/signup">Sign up</Link>
+                    </>
+                  ) : loginType === "organization" ? (
+                    <>
+                      Don't have an organization? <Link to="/organization/register">Register</Link>
+                    </>
+                  ) : null}
+                </div>
+
+                <Link to="/" className="authBackLinkNew">
+                  <span>←</span> Back to home
                 </Link>
               </div>
-
-              <div className="authMeta">
-                Need an organization account? {" "}
-                <Link to="/organization/register" className="inlineLink">
-                  Register organization
-                </Link>
-              </div>
-
-              <div style={{ marginTop: 6 }}>
-                <Link to="/" className="inlineLink">
-                  {"<- Back to home"}
-                </Link>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>
