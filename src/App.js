@@ -313,28 +313,6 @@ function Landing({ theme, toggleTheme }) {
         </div>
       </section>
 
-      <section id="contact" className="section">
-        <div className="sectionHead">
-          <h2>Contact</h2>
-          <p>Want to partner or volunteer? Let us talk.</p>
-        </div>
-
-        <div className="contactRow">
-          <div className="miniCard">
-            <h4>Email</h4>
-            <p>prappopal@gmail.com</p>
-          </div>
-          <div className="miniCard">
-            <h4>Phone</h4>
-            <p>01992100882</p>
-          </div>
-          <div className="miniCard">
-            <h4>Partners</h4>
-            <p>NGOs and organizations welcome</p>
-          </div>
-        </div>
-      </section>
-
       <section
         id="regions"
         className="section regionSection"
