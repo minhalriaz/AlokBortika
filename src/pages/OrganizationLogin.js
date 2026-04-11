@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../api/api";
 import "../App.css";
 
@@ -9,6 +9,14 @@ export default function OrganizationLogin() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const savedMessage = localStorage.getItem("organizationAuthError");
+    if (savedMessage) {
+      setError(savedMessage);
+      localStorage.removeItem("organizationAuthError");
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,21 +34,25 @@ export default function OrganizationLogin() {
       if (res.data.success) {
         const org = res.data.organization;
 
-        // Store org token and data
-        if (res.data.token) {
-          localStorage.setItem("orgToken", res.data.token);
-        }
-        localStorage.setItem("organization", JSON.stringify(org));
-
         if (org.status === "pending") {
+          localStorage.removeItem("orgToken");
+          localStorage.removeItem("organization");
           setError("Your organization is awaiting admin approval. You'll be notified once approved.");
           setLoading(false);
           return;
         }
 
+        if (res.data.token) {
+          localStorage.setItem("orgToken", res.data.token);
+        }
+        localStorage.setItem("organization", JSON.stringify(org));
+
         navigate("/organization-dashboard", { replace: true });
       } else {
-        setError(res.data.message || "Login failed. Please check your credentials.");
+        localStorage.removeItem("orgToken");
+        localStorage.removeItem("organization");
+        localStorage.removeItem("organizationAuthError");
+        setError(res.data.message || "Invalid email or password.");
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
@@ -51,150 +63,104 @@ export default function OrganizationLogin() {
 
   return (
     <div className="page">
-      <div className="bgGlow bgGlow1" />
-      <div className="bgGlow bgGlow2" />
+      <div className="authPage">
+        <div className="authWrapper">
+          <div className="authCardNew orgAuthCard">
+            <div className="authCardLeftNew orgAuthLeft">
+              <div className="authCardLeftContentNew">
+                <Link to="/" className="authLogoNew">
+                  AlokBortika
+                </Link>
+                <h1>Organization Portal</h1>
+                <p>Manage your organization, coordinate volunteers, and solve community problems.</p>
+                
+                <div className="authBenefitsNew">
+                  <div className="authBenefitNew">
+                    <span className="authBenefitIconNew">✓</span>
+                    <span>Post volunteer opportunities</span>
+                  </div>
+                  <div className="authBenefitNew">
+                    <span className="authBenefitIconNew">✓</span>
+                    <span>Manage your volunteer team</span>
+                  </div>
+                  <div className="authBenefitNew">
+                    <span className="authBenefitIconNew">✓</span>
+                    <span>Track problem resolutions</span>
+                  </div>
+                </div>
 
-      {/* Navbar */}
-      <nav className="nav">
-        <div className="brand">
-          <div className="brandMark">
-            <div className="brandMarkDot" />
-          </div>
-          <span style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--accent-strong)" }}>
-            AlokBortika
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <Link to="/login" style={{ color: "var(--muted)", fontSize: "0.9rem", fontWeight: 600 }}>
-            Volunteer Login
-          </Link>
-          <Link to="/organization/register" className="primary" style={{
-            padding: "8px 18px", borderRadius: "999px", background: "var(--accent)",
-            color: "white", fontWeight: 700, fontSize: "0.88rem"
-          }}>
-            Register Org
-          </Link>
-        </div>
-      </nav>
-
-      <div className="hero" style={{ minHeight: "calc(100vh - 70px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: "100%", maxWidth: 560, padding: "0 1rem" }}>
-
-          {/* Header */}
-          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: "8px",
-              background: "rgba(15,118,110,0.1)", color: "var(--accent)",
-              padding: "6px 16px", borderRadius: "999px", fontSize: "0.82rem",
-              fontWeight: 700, marginBottom: "1rem", border: "1px solid rgba(15,118,110,0.2)"
-            }}>
-              🏢 Organization Portal
+                <div className="authCardFooterNew">
+                  <span>Join as organization</span>
+                  <Link to="/organization/register" className="authFooterLinkNew">Register</Link>
+                </div>
+              </div>
             </div>
-            <h1 style={{ fontSize: "2rem", fontWeight: 800, color: "var(--text)", marginBottom: "0.5rem" }}>
-              Organization Login
-            </h1>
-            <p style={{ color: "var(--muted)", fontSize: "0.95rem" }}>
-              Sign in to manage your organization, volunteers & problems.
-            </p>
-          </div>
 
-          {/* Form Card */}
-          <div className="card authCard" style={{ padding: "2rem" }}>
-            {error && (
-              <div style={{
-                background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.25)",
-                borderRadius: "12px", padding: "12px 16px", color: "#dc2626",
-                marginBottom: "1.25rem", fontSize: "0.9rem", fontWeight: 600
-              }}>
-                ⚠️ {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1rem" }}>
-              <label>
-                <div style={{ fontWeight: 700, marginBottom: 6, fontSize: "0.9rem", color: "var(--text)" }}>
-                  Organization Email
+            <div className="authCardRightNew">
+              <div className="authFormWrapperNew">
+                <div className="authFormHeaderNew">
+                  <h2>Organization Login</h2>
+                  <p>Enter your organization credentials</p>
                 </div>
-                <input
-                  className="input"
-                  type="email"
-                  name="email"
-                  placeholder="org@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </label>
 
-              <label>
-                <div style={{ fontWeight: 700, marginBottom: 6, fontSize: "0.9rem", color: "var(--text)" }}>
-                  Password
+                {error && <div className="authErrorNew">{error}</div>}
+
+                <form className="authFormNew" onSubmit={handleSubmit}>
+                  <div className="formGroupNew">
+                    <label htmlFor="email">Organization Email</label>
+                    <input
+                      id="email"
+                      className="authInputNew"
+                      type="email"
+                      name="email"
+                      placeholder="org@example.com"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="formGroupNew">
+                    <label htmlFor="password">Password</label>
+                    <input
+                      id="password"
+                      className="authInputNew"
+                      type="password"
+                      name="password"
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <button
+                    className="authSubmitBtnNew"
+                    type="submit"
+                    disabled={loading}
+                  >
+                    {loading ? "Signing in..." : "Sign In to Dashboard"}
+                  </button>
+                </form>
+
+                <div className="authFormFooterNew">
+                  Don't have an organization? <Link to="/organization/register">Register here</Link>
                 </div>
-                <input
-                  className="input"
-                  type="password"
-                  name="password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </label>
 
-              <button
-                className="primary"
-                type="submit"
-                disabled={loading}
-                style={{ marginTop: "0.5rem", padding: "12px", fontSize: "1rem", fontWeight: 700 }}
-              >
-                {loading ? (
-                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                    <span style={{
-                      width: "16px", height: "16px", borderRadius: "50%",
-                      border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white",
-                      animation: "spin 0.7s linear infinite", display: "inline-block"
-                    }} />
-                    Logging in...
-                  </span>
-                ) : "Login as Organization"}
-              </button>
+                <div className="authAltLinksNew">
+                  <Link to="/login">← Volunteer Login</Link>
+                </div>
 
-              <div style={{ textAlign: "center", color: "var(--muted)", fontSize: "0.88rem" }}>
-                Don't have an account?{" "}
-                <Link to="/organization/register" style={{ color: "var(--accent)", fontWeight: 700 }}>
-                  Register your organization
+                <Link to="/" className="authBackLinkNew">
+                  <span>←</span> Back to home
                 </Link>
               </div>
-
-              <div style={{ textAlign: "center" }}>
-                <Link to="/" style={{ color: "var(--muted)", fontSize: "0.88rem" }}>
-                  ← Back to home
-                </Link>
-              </div>
-            </form>
-          </div>
-
-          {/* Info Box */}
-          <div style={{
-            marginTop: "1.5rem", padding: "1rem 1.25rem",
-            background: "rgba(15,118,110,0.06)", borderRadius: "14px",
-            border: "1px solid rgba(15,118,110,0.15)"
-          }}>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--muted)", textAlign: "center" }}>
-              🔒 Are you a volunteer?{" "}
-              <Link to="/login" style={{ color: "var(--accent)", fontWeight: 700 }}>
-                Login here
-              </Link>
-            </p>
+            </div>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 }

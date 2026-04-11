@@ -2,10 +2,13 @@ import userModel from "../../models/user.js";
 import organizationModel from "../../models/Organization.js";
 import problemModel from "../problem/problem.model.js";
 
+const getRequestOrganizationId = (req) =>
+  req.organizationId || req.body?.organizationId || null;
+
 // ========== GET ORGANIZATION DASHBOARD ==========
 export const getOrganizationDashboard = async (req, res) => {
   try {
-    const organizationId = req.body.organizationId;
+    const organizationId = getRequestOrganizationId(req);
 
     const organization = await organizationModel
       .findById(organizationId)
@@ -51,7 +54,7 @@ export const getOrganizationDashboard = async (req, res) => {
 // ========== GET AVAILABLE VOLUNTEERS ==========
 export const getAvailableVolunteers = async (req, res) => {
   try {
-    const { organizationId } = req.body;
+    const organizationId = getRequestOrganizationId(req);
 
     const organization = await organizationModel.findById(organizationId);
     if (!organization) {
@@ -79,7 +82,8 @@ export const getAvailableVolunteers = async (req, res) => {
 // ========== ADD VOLUNTEER TO ORGANIZATION ==========
 export const addVolunteerToOrganization = async (req, res) => {
   try {
-    const { organizationId, volunteerId } = req.body;
+    const organizationId = getRequestOrganizationId(req);
+    const { volunteerId } = req.body;
 
     const organization = await organizationModel.findById(organizationId);
     if (!organization) {
@@ -112,7 +116,8 @@ export const addVolunteerToOrganization = async (req, res) => {
 // ========== REMOVE VOLUNTEER FROM ORGANIZATION ==========
 export const removeVolunteerFromOrganization = async (req, res) => {
   try {
-    const { organizationId, volunteerId } = req.body;
+    const organizationId = getRequestOrganizationId(req);
+    const { volunteerId } = req.body;
 
     const organization = await organizationModel.findById(organizationId);
     if (!organization) {
@@ -146,7 +151,8 @@ export const removeVolunteerFromOrganization = async (req, res) => {
 // ========== ASSIGN VOLUNTEER TO PROBLEM ==========
 export const assignVolunteerToProblem = async (req, res) => {
   try {
-    const { volunteerId, organizationId } = req.body;
+    const organizationId = getRequestOrganizationId(req);
+    const { volunteerId } = req.body;
     const { problemId } = req.params;
 
     const volunteer = await userModel.findById(volunteerId);
@@ -191,7 +197,7 @@ export const assignVolunteerToProblem = async (req, res) => {
 // ========== UNASSIGN VOLUNTEER FROM PROBLEM ==========
 export const unassignVolunteerFromProblem = async (req, res) => {
   try {
-    const { organizationId } = req.body;
+    const organizationId = getRequestOrganizationId(req);
     const { problemId } = req.params;
 
     const problem = await problemModel.findById(problemId);
@@ -220,7 +226,7 @@ export const unassignVolunteerFromProblem = async (req, res) => {
 // ========== MARK PROBLEM AS DONE ==========
 export const markProblemDone = async (req, res) => {
   try {
-    const { organizationId } = req.body;
+    const organizationId = getRequestOrganizationId(req);
     const { problemId } = req.params;
 
     const problem = await problemModel.findById(problemId);
@@ -264,7 +270,7 @@ export const markProblemDone = async (req, res) => {
 // ========== UPDATE ORGANIZATION PROFILE ==========
 export const updateOrganizationProfile = async (req, res) => {
   try {
-    const { organizationId } = req.body;
+    const organizationId = getRequestOrganizationId(req);
     const {
       description,
       services,
@@ -308,7 +314,7 @@ export const updateOrganizationProfile = async (req, res) => {
 // ========== GET ORGANIZATION PROBLEMS (with filters) ==========
 export const getOrganizationProblems = async (req, res) => {
   try {
-    const { organizationId } = req.body;
+    const organizationId = getRequestOrganizationId(req);
     const { status, category } = req.query;
 
     const filter = { organizationId };
@@ -330,7 +336,8 @@ export const getOrganizationProblems = async (req, res) => {
 // ========== CREATE PROBLEM FOR ORGANIZATION ==========
 export const createProblemForOrganization = async (req, res) => {
   try {
-    const { organizationId, title, description, category, location } = req.body;
+    const organizationId = getRequestOrganizationId(req);
+    const { title, description, category, location } = req.body;
 
     if (!title || !description) {
       return res.json({

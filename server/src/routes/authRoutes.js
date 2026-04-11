@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import verifyToken from "../middlewares/verifyToken.js";
+import transporter from "../config/nodemailer.js";
 
 const router = express.Router();
 
@@ -115,6 +116,16 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    if (user.status && user.status !== "active") {
+      return res.status(403).json({
+        success: false,
+        message:
+          user.status === "suspended"
+            ? "Your account has been suspended. Please contact an administrator."
+            : "Your account is inactive. Please contact an administrator.",
+      });
+    }
+
     const token = jwt.sign(
       {
         id: user._id,
@@ -187,6 +198,202 @@ router.post("/logout", (req, res) => {
     success: true,
     message: "Logged out successfully",
   });
+});
+
+router.post("/send-verify-otp", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.isAccountVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "Account already verified",
+      });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+
+    user.verifyOtp = otp;
+    user.verifyOtpExpireAt = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save();
+
+    await transporter.sendMail({
+      from: `"${process.env.SENDER_NAME}" <${process.env.SENDER_EMAIL}>`,
+      to: user.email,
+      subject: "Alok Bortika - Account Verification OTP",
+      text: `Your OTP is ${otp}. Verify your account using this OTP.`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Verification OTP sent to ${user.email}`,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to send verification OTP",
+    });
+  }
+});
+
+router.post("/verify-account", verifyToken, async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP is required",
+      });
+    }
+
+    if (user.isAccountVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "Account already verified",
+      });
+    }
+
+    if (!user.verifyOtp || user.verifyOtp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    if (user.verifyOtpExpireAt < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
+
+    user.isAccountVerified = true;
+    user.verifyOtp = "";
+    user.verifyOtpExpireAt = 0;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to verify account",
+    });
+  }
+});
+
+router.post("/send-reset-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+
+    user.resetOtp = otp;
+    user.resetOtpExpireAt = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+    await transporter.sendMail({
+      from: `"${process.env.SENDER_NAME}" <${process.env.SENDER_EMAIL}>`,
+      to: email,
+      subject: "Password Reset OTP - Alok Bortika",
+      text: `Your OTP for resetting your password is ${otp}. Use this OTP to proceed.`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent to your email",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to send reset OTP",
+    });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, OTP, and new password are required",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!user.resetOtp || user.resetOtp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    if (user.resetOtpExpireAt < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetOtp = "";
+    user.resetOtpExpireAt = 0;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password has been reset successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to reset password",
+    });
+  }
 });
 
 export default router;

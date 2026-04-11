@@ -19,11 +19,11 @@ const donationSchema = new mongoose.Schema(
     stripeSessionId: { type: String, default: "", trim: true },
     note: { type: String, default: "", trim: true },
     isAnonymous: { type: Boolean, default: false },
-status: {
-  type: String,
-  enum: ["Pending", "Received", "Failed", "Cancelled"],
-  default: "Pending",
-},
+    status: {
+      type: String,
+      default: "Pending Verification",
+      enum: ["Pending Verification", "Received"],
+    },
     donatedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

@@ -1,12 +1,41 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Plus, Edit, Trash2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import api from "../../api/api.js";
 import toast from "react-hot-toast";
 
+const INITIAL_FORM = {
+  name: "",
+  type: "CBO",
+  focusArea: "",
+  village: "",
+  union: "",
+  upazila: "",
+  district: "",
+  contactPerson: "",
+  phone: "",
+  email: "",
+  password: "",
+  description: "",
+  services: "",
+  status: "active",
+};
+
+const ORGANIZATION_STATUS_OPTIONS = ["pending", "active", "inactive", "suspended"];
+
+const assertSuccess = (response, fallbackMessage) => {
+  if (response.data?.success === false) {
+    throw new Error(response.data.message || fallbackMessage);
+  }
+
+  return response.data;
+};
+
 const AdminOrganizations = () => {
   const navigate = useNavigate();
   const [organizations, setOrganizations] = useState([]);
+  const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("create");
@@ -15,30 +44,19 @@ const AdminOrganizations = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const [form, setForm] = useState({
-    name: "",
-    type: "CBO",
-    focusArea: "",
-    village: "",
-    union: "",
-    upazila: "",
-    district: "",
-    contactPerson: "",
-    phone: "",
-    email: "",
-    description: "",
-    services: "",
-    status: "active",
-  });
+  const [form, setForm] = useState(INITIAL_FORM);
 
   // Fetch organizations
   const fetchOrganizations = async () => {
     try {
       setLoading(true);
       const res = await api.get("/admin/organizations");
-      setOrganizations(res.data.organizations || []);
+      const data = assertSuccess(res, "Failed to fetch organizations");
+      setOrganizations(data.organizations || []);
+      setCounts(data.counts || {});
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to fetch organizations");
+      setOrganizations([]);
+      toast.error(error?.response?.data?.message || error?.message || "Failed to fetch organizations");
     } finally {
       setLoading(false);
     }
@@ -57,21 +75,7 @@ const AdminOrganizations = () => {
   };
 
   const resetForm = () => {
-    setForm({
-      name: "",
-      type: "CBO",
-      focusArea: "",
-      village: "",
-      union: "",
-      upazila: "",
-      district: "",
-      contactPerson: "",
-      phone: "",
-      email: "",
-      description: "",
-      services: "",
-      status: "active",
-    });
+    setForm(INITIAL_FORM);
     setEditingId(null);
   };
 
@@ -90,6 +94,7 @@ const AdminOrganizations = () => {
         contactPerson: org.contactPerson || "",
         phone: org.phone || "",
         email: org.email || "",
+        password: "",
         description: org.description || "",
         services: org.services?.join(", ") || "",
         status: org.status || "active",
@@ -108,8 +113,18 @@ const AdminOrganizations = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) {
-      toast.error("Please fill in name, email, and phone");
+    if (
+      !form.name.trim() ||
+      !form.contactPerson.trim() ||
+      !form.email.trim() ||
+      !form.phone.trim()
+    ) {
+      toast.error("Please fill in organization name, contact person, email, and phone");
+      return;
+    }
+
+    if (modalMode === "create" && form.password.trim().length < 6) {
+      toast.error("Please add a password with at least 6 characters");
       return;
     }
 
@@ -140,11 +155,17 @@ const AdminOrganizations = () => {
         status: form.status,
       };
 
+      if (form.password.trim()) {
+        payload.password = form.password.trim();
+      }
+
       if (modalMode === "create") {
-        await api.post("/admin/organizations", payload);
+        const res = await api.post("/admin/organizations", payload);
+        assertSuccess(res, "Failed to create organization");
         toast.success("Organization created successfully");
       } else {
-        await api.put(`/admin/organizations/${editingId}`, payload);
+        const res = await api.put(`/admin/organizations/${editingId}`, payload);
+        assertSuccess(res, "Failed to update organization");
         toast.success("Organization updated successfully");
       }
 
@@ -153,6 +174,7 @@ const AdminOrganizations = () => {
     } catch (error) {
       toast.error(
         error?.response?.data?.message ||
+          error?.message ||
           `Failed to ${modalMode === "create" ? "create" : "update"} organization`
       );
     } finally {
@@ -165,12 +187,13 @@ const AdminOrganizations = () => {
 
     try {
       setDeleting(true);
-      await api.delete(`/admin/organizations/${deleteTarget._id}`);
+      const res = await api.delete(`/admin/organizations/${deleteTarget._id}`);
+      assertSuccess(res, "Failed to delete organization");
       toast.success("Organization deleted successfully");
       setDeleteTarget(null);
       fetchOrganizations();
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to delete organization");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to delete organization");
     } finally {
       setDeleting(false);
     }
@@ -235,6 +258,14 @@ const AdminOrganizations = () => {
           </button>
         </div>
 
+        {counts.pending > 0 && (
+          <div className="mx-6 mt-4 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 flex items-center gap-3">
+            <span className="text-amber-600 dark:text-amber-400 font-bold text-lg">⚠</span>
+            <p className="text-amber-800 dark:text-amber-300 text-sm font-medium">
+              {counts.pending} organization{counts.pending > 1 ? "s are" : " is"} awaiting your approval. Find the pending cards below and click <strong>Approve Organization</strong>.
+            </p>
+          </div>
+        )}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="spinner"></div>
@@ -265,6 +296,12 @@ const AdminOrganizations = () => {
                     className={`px-2 py-1 rounded text-xs font-medium ${
                       org.status === "active"
                         ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                        : org.status === "pending"
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
+                        : org.status === "suspended"
+                        ? "bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300"
+                        : org.status === "deleted"
+                        ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
                         : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
                     }`}
                   >
@@ -299,19 +336,71 @@ const AdminOrganizations = () => {
                   )}
                 </div>
 
-                <div className="flex gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
-                  <button
-                    onClick={() => handleOpenModal("edit", org)}
-                    className="flex-1 px-3 py-2 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 text-sm font-medium flex items-center justify-center gap-1 transition-colors"
-                  >
-                    <Edit size={16} /> Edit
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget(org)}
-                    className="flex-1 px-3 py-2 rounded bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 text-sm font-medium flex items-center justify-center gap-1 transition-colors"
-                  >
-                    <Trash2 size={16} /> Delete
-                  </button>
+                <div className="flex flex-col gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  {org.status === "pending" && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await api.post(`/admin/organization/${org._id}/approve`);
+                          toast.success("Organization approved successfully");
+                          fetchOrganizations();
+                        } catch (err) {
+                          toast.error(err?.response?.data?.message || "Failed to approve");
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 text-sm font-medium flex items-center justify-center gap-1 transition-colors"
+                    >
+                      ✓ Approve Organization
+                    </button>
+                  )}
+                  {org.status === "active" && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await api.patch(`/admin/organization/${org._id}/status`, { status: "suspended" });
+                          toast.success("Organization suspended");
+                          fetchOrganizations();
+                        } catch (err) {
+                          toast.error(err?.response?.data?.message || "Failed to suspend");
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800 text-sm font-medium flex items-center justify-center gap-1 transition-colors"
+                    >
+                      ⏸ Suspend
+                    </button>
+                  )}
+                  {org.status === "suspended" && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await api.patch(`/admin/organization/${org._id}/status`, { status: "active" });
+                          toast.success("Organization reactivated");
+                          fetchOrganizations();
+                        } catch (err) {
+                          toast.error(err?.response?.data?.message || "Failed to reactivate");
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 text-sm font-medium flex items-center justify-center gap-1 transition-colors"
+                    >
+                      ▶ Reactivate
+                    </button>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleOpenModal("edit", org)}
+                      disabled={org.status === "deleted"}
+                      className="flex-1 px-3 py-2 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 text-sm font-medium flex items-center justify-center gap-1 transition-colors"
+                    >
+                      <Edit size={16} /> Edit
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(org)}
+                      disabled={org.status === "deleted"}
+                      className="flex-1 px-3 py-2 rounded bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 text-sm font-medium flex items-center justify-center gap-1 transition-colors"
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -320,7 +409,7 @@ const AdminOrganizations = () => {
       </div>
 
       {/* Modal*/}
-      {showModal && (
+      {showModal && ReactDOM.createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
@@ -372,9 +461,9 @@ const AdminOrganizations = () => {
               </div>
 
               {/* Contact Info */}
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="adminLabel">Contact Person</label>
+                  <label className="adminLabel">Contact Person *</label>
                   <input
                     type="text"
                     name="contactPerson"
@@ -382,6 +471,7 @@ const AdminOrganizations = () => {
                     onChange={handleInputChange}
                     className="adminInput"
                     placeholder="Full name"
+                    required
                   />
                 </div>
 
@@ -408,6 +498,26 @@ const AdminOrganizations = () => {
                     className="adminInput"
                     placeholder="Phone number"
                     required
+                  />
+                </div>
+
+                <div>
+                  <label className="adminLabel">
+                    {modalMode === "create" ? "Password *" : "New Password"}
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleInputChange}
+                    className="adminInput"
+                    placeholder={
+                      modalMode === "create"
+                        ? "Set an initial password"
+                        : "Leave blank to keep the current password"
+                    }
+                    minLength={modalMode === "create" ? 6 : undefined}
+                    required={modalMode === "create"}
                   />
                 </div>
               </div>
@@ -502,8 +612,11 @@ const AdminOrganizations = () => {
                   onChange={handleInputChange}
                   className="adminSelect"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  {ORGANIZATION_STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -531,10 +644,10 @@ const AdminOrganizations = () => {
             </form>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Delete Confirmation Modal */}
-      {deleteTarget && (
+      {deleteTarget && ReactDOM.createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-sm w-full">
             <div className="p-6">
@@ -564,7 +677,7 @@ const AdminOrganizations = () => {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 };

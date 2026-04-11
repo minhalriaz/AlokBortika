@@ -9,6 +9,7 @@ import {
   getOrganizationById,
   approveOrganization,
   getPendingOrganizations,
+  updateOrganizationStatus,
   getUsersAdmin,
   getOrganizationOptions,
   updateUserAdmin,
@@ -26,6 +27,8 @@ adminRouter.post("/organizations", verifyToken, createOrganization);
 adminRouter.post("/create-organization", verifyToken, createOrganization);
 adminRouter.put("/organizations/:organizationId", verifyToken, updateOrganization);
 adminRouter.put("/organization/:organizationId", verifyToken, updateOrganization);
+adminRouter.patch("/organizations/:organizationId/status", verifyToken, updateOrganizationStatus);
+adminRouter.patch("/organization/:organizationId/status", verifyToken, updateOrganizationStatus);
 adminRouter.post("/organizations/:organizationId/approve", verifyToken, approveOrganization);
 adminRouter.post("/organization/:organizationId/approve", verifyToken, approveOrganization);
 adminRouter.delete("/organizations/:organizationId", verifyToken, deleteOrganization);
@@ -35,6 +38,7 @@ adminRouter.get("/organization/:organizationId", verifyToken, getOrganizationByI
 
 adminRouter.get("/users", verifyToken, getUsersAdmin);
 adminRouter.get("/user-options/organizations", verifyToken, getOrganizationOptions);
+adminRouter.get("/organization-options", verifyToken, getOrganizationOptions);
 adminRouter.patch("/users/:userId", verifyToken, updateUserAdmin);
 adminRouter.delete("/users/:userId", verifyToken, deleteUserAdmin);
 
